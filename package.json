@@ -1,0 +1,38 @@
+{
+  "name": "meal-tracker-athlete",
+  "version": "1.0.0",
+  "description": "Simple meal tracking app for high school athletes",
+  "main": "node_modules/expo/AppEntry.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "test": "jest"
+  },
+  "dependencies": {
+    "expo": "~50.0.0",
+    "expo-camera": "~14.1.0",
+    "expo-image-picker": "~14.7.0",
+    "expo-status-bar": "~1.11.0",
+    "react": "18.2.0",
+    "react-native": "0.73.0",
+    "react-native-paper": "^5.11.0",
+    "expo-file-system": "~16.0.0",
+    "expo-sharing": "~12.0.0",
+    "@react-native-async-storage/async-storage": "1.21.0",
+    "@react-navigation/native": "^6.1.9",
+    "@react-navigation/native-stack": "^6.9.17",
+    "react-native-safe-area-context": "4.8.2",
+    "react-native-screens": "~3.29.0",
+    "date-fns": "^2.30.0",
+    "axios": "^1.6.0",
+    "@expo/vector-icons": "^14.0.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.20.0",
+    "@types/react": "~18.2.45",
+    "typescript": "^5.1.0"
+  },
+  "private": true
+}

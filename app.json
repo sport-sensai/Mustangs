@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "MealTrack",
+    "slug": "meal-tracker-athlete",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#4CAF50"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.athlete.mealtracker",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Take photos of your meals for tracking",
+        "NSPhotoLibraryUsageDescription": "Select meal photos from your library"
+      }
+    },
+    "android": {
+      "package": "com.athlete.mealtracker",
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#4CAF50"
+      }
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Take photos of your meals for tracking"
+        }
+      ]
+    ]
+  }
+}
