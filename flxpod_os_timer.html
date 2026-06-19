@@ -182,6 +182,36 @@ html,body{
 }
 .tv-back:active{color:rgba(255,255,255,.5)}
 
+/* Pause indicator */
+.tv-paused{
+  position:absolute;top:clamp(14px,3vh,36px);right:clamp(16px,3vw,44px);
+  font-family:"Barlow",sans-serif;font-size:13px;font-weight:500;
+  letter-spacing:.2em;color:rgba(255,255,255,.35);
+  z-index:10;display:none;
+}
+.tv-paused.vis{display:block;animation:pauseBlink 1.2s ease-in-out infinite}
+@keyframes pauseBlink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* Save custom button */
+.flx-save-btn{
+  -webkit-appearance:none;appearance:none;border:1px solid rgba(255,255,255,.1);
+  border-radius:6px;background:rgba(255,255,255,.04);color:rgba(255,255,255,.4);
+  padding:8px 0;width:100%;margin-top:8px;
+  font-family:"Barlow",sans-serif;font-size:11px;font-weight:500;
+  letter-spacing:.15em;cursor:pointer;transition:all .15s;
+}
+.flx-save-btn:active{transform:scale(.98);background:rgba(255,255,255,.08)}
+
+/* Delete button on custom presets */
+.flx-preset-del{
+  position:absolute;top:4px;right:6px;
+  -webkit-appearance:none;appearance:none;border:none;background:transparent;
+  color:rgba(255,255,255,.2);font-size:14px;cursor:pointer;padding:2px 4px;
+  font-family:"Barlow",sans-serif;line-height:1;z-index:2;
+}
+.flx-preset-del:active{color:rgba(255,255,255,.5)}
+.flx-preset{position:relative}
+
 /* ═══════════════════════════════════════
    FLXPOD — Segmented LED
    ═══════════════════════════════════════ */
@@ -251,10 +281,15 @@ html,body{
     </div>
 
     <div class="setup-section">
+      <div id="flx-custom-section" style="display:none">
+        <div class="flx-groupLabel">MY PRESETS</div>
+        <div class="flx-presetGrid" id="flx-custom-grid"></div>
+      </div>
       <div class="flx-groupLabel">COACHING</div>
       <div class="flx-presetGrid" id="flx-coach-grid"></div>
       <div class="flx-groupLabel">CONDITIONING</div>
       <div class="flx-presetGrid" id="flx-cond-grid"></div>
+      <button class="flx-save-btn" id="flxSaveCustom" type="button">SAVE CURRENT AS PRESET</button>
     </div>
 
     <div class="setup-section">
@@ -307,6 +342,7 @@ html,body{
 <!-- TV MODE -->
 <div class="tv" id="tvScreen">
   <button class="tv-back" id="backBtn">&#x2190; END</button>
+  <div class="tv-paused" id="tvPaused">PAUSED</div>
   <img class="tv-logo" id="tvLogo" alt="FLXPOD OS" src="">
   <div id="flx-run-led"></div>
   <div class="flx-phaseRow" id="tvPhaseRow" style="margin-top:clamp(24px,5vh,64px)">
@@ -456,7 +492,7 @@ var runLed=flxBuildLed(document.getElementById("flx-run-led"));
 
 var workSec=60,restSec=0,totalRounds=0;
 var curRound=1,phase="ready",remaining=60,phaseDur=60;
-var running=false,flxInterval=null,lastTick=null,oneMinSaid=false,lastBeepSec=null;
+var running=false,flxInterval=null,lastTick=null,oneMinSaid=false,thirtySaid=false,tenSaid=false,lastBeepSec=null;
 var presetName="STATION 1";
 
 function flxTone(freq,dur,vol){
@@ -515,12 +551,14 @@ function flxRender(){
   else if(running&&remaining<=60)tvScreen.className="tv state-warning";
 }
 
-function flxEnterPhase(p){phase=p;remaining=(p==="work")?workSec:restSec;phaseDur=remaining;oneMinSaid=false;lastBeepSec=null}
+function flxEnterPhase(p){phase=p;remaining=(p==="work")?workSec:restSec;phaseDur=remaining;oneMinSaid=false;thirtySaid=false;tenSaid=false;lastBeepSec=null}
 
 function flxTick(){
   if(!running)return;
   var now=Date.now(),dt=(now-lastTick)/1000;lastTick=now;remaining-=dt;
   if(!oneMinSaid&&remaining<=60&&remaining>0&&phaseDur>61&&phase!=="rest"&&isOn("toggleMinute")){oneMinSaid=true;flxSay("One minute remaining.")}
+  if(!thirtySaid&&remaining<=30&&remaining>0&&phaseDur>35&&phase!=="rest"&&isOn("toggleSound")){thirtySaid=true;flxSay("Thirty seconds.")}
+  if(!tenSaid&&remaining<=10&&remaining>0&&phaseDur>15&&phase!=="rest"&&isOn("toggleSound")){tenSaid=true;flxSay("Ten seconds.")}
   if(remaining<=10&&remaining>0){var sec=Math.ceil(remaining);if(sec!==lastBeepSec){lastBeepSec=sec;flxTone(sec<=3?900:680,0.15,sec<=3?0.9:0.7)}}
   if(remaining<=0){flxAdvance();return}
   flxRender();
@@ -546,7 +584,7 @@ function flxStart(){
   running=true;lastTick=Date.now();flxInterval=setInterval(flxTick,100);flxRender();
 }
 function flxStop(){running=false;if(flxInterval)clearInterval(flxInterval);flxInterval=null;flxRender()}
-function flxReset(){flxStop();curRound=1;phase="ready";remaining=workSec;phaseDur=workSec;oneMinSaid=false;lastBeepSec=null;flxRender()}
+function flxReset(){flxStop();curRound=1;phase="ready";remaining=workSec;phaseDur=workSec;oneMinSaid=false;thirtySaid=false;tenSaid=false;lastBeepSec=null;flxRender()}
 
 function flxClearSel(){var els=document.querySelectorAll(".flx-preset.sel");for(var i=0;i<els.length;i++)els[i].classList.remove("sel")}
 function flxLoad(p){workSec=p.work;restSec=p.rest;totalRounds=p.rounds;presetName=p.name;flxClearSel();var t=document.querySelector('[data-flx-preset="'+p.name+'"]');if(t)t.classList.add("sel");flxReset()}
@@ -606,6 +644,55 @@ function exitSession(){
 }
 document.getElementById("backBtn").addEventListener("click",function(e){e.preventDefault();exitSession()});
 document.addEventListener("keydown",function(e){if(e.key==="Escape")exitSession()});
+
+// ── Tap to pause/resume ──
+var pausedEl=document.getElementById("tvPaused");
+tvScreen.addEventListener("click",function(e){
+  if(e.target.closest(".tv-back"))return;
+  if(phase==="done"||phase==="ready")return;
+  if(running){flxStop();pausedEl.classList.add("vis")}
+  else{running=true;lastTick=Date.now();flxInterval=setInterval(flxTick,100);pausedEl.classList.remove("vis");flxRender()}
+});
+
+// ── Custom preset save/load ──
+var CUSTOM_KEY="flxpod_custom_presets";
+function loadCustomPresets(){try{return JSON.parse(localStorage.getItem(CUSTOM_KEY))||[]}catch(e){return[]}}
+function saveCustomPresets(list){try{localStorage.setItem(CUSTOM_KEY,JSON.stringify(list))}catch(e){}}
+function renderCustomPresets(){
+  var grid=document.getElementById("flx-custom-grid");
+  var section=document.getElementById("flx-custom-section");
+  if(!grid||!section)return;
+  var customs=loadCustomPresets();
+  section.style.display=customs.length?"block":"none";
+  grid.innerHTML="";
+  customs.forEach(function(p,idx){
+    var b=document.createElement("button");b.type="button";b.className="flx-preset";
+    b.setAttribute("data-flx-preset",p.name);
+    var desc=(p.rest>0?flxFmt(p.work)+" / "+flxFmt(p.rest):flxFmt(p.work))+" · "+(p.rounds===0?"∞":p.rounds+"x");
+    b.innerHTML='<div class="pn">'+p.name+'</div><div class="pd">'+desc+'</div>';
+    var del=document.createElement("button");del.type="button";del.className="flx-preset-del";del.textContent="×";
+    del.addEventListener("click",function(e){e.stopPropagation();var c=loadCustomPresets();c.splice(idx,1);saveCustomPresets(c);renderCustomPresets()});
+    b.appendChild(del);
+    b.addEventListener("click",function(){flxLoad(p)});
+    grid.appendChild(b);
+  });
+}
+document.getElementById("flxSaveCustom").addEventListener("click",function(e){
+  e.preventDefault();
+  var name=presetName;
+  if(name==="CUSTOM"){
+    var mins=Math.floor(workSec/60),secs=workSec%60;
+    name=mins+"m"+(secs?secs+"s":"");
+    if(restSec>0){var rm=Math.floor(restSec/60),rs=restSec%60;name+="/"+rm+"m"+(rs?rs+"s":"");}
+  }
+  var customs=loadCustomPresets();
+  for(var i=0;i<customs.length;i++){if(customs[i].name===name&&customs[i].work===workSec&&customs[i].rest===restSec&&customs[i].rounds===totalRounds)return}
+  customs.push({name:name,work:workSec,rest:restSec,rounds:totalRounds});
+  saveCustomPresets(customs);
+  renderCustomPresets();
+  flxTone(880,0.1,0.5);
+});
+renderCustomPresets();
 
 // ── Local clock ──
 var localTimeEl=document.getElementById("localTime");
