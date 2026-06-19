@@ -24,65 +24,95 @@ html,body{
    SETUP MODE
    ═══════════════════════════════════════ */
 .setup{
-  display:flex;flex-direction:column;align-items:center;
+  display:flex;flex-direction:column;
   height:100%;padding:20px 24px 24px;gap:0;overflow-y:auto;
 }
 .setup-header{
-  width:100%;display:flex;align-items:center;margin-bottom:clamp(16px,3vh,32px);
+  width:100%;display:flex;align-items:center;justify-content:space-between;
+  padding-bottom:clamp(12px,2vh,20px);
+  border-bottom:1px solid rgba(255,255,255,.06);
+  margin-bottom:clamp(16px,3vh,28px);
 }
 .setup-logo{
-  height:clamp(36px,5vw,56px);width:auto;
-  object-fit:contain;
+  height:clamp(32px,4.5vw,48px);width:auto;object-fit:contain;
+}
+.setup-status{
+  font-size:12px;font-weight:700;letter-spacing:.12em;color:#555;
+}
+.setup-body{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:0;
+}
+.setup-preview{
+  text-align:center;margin-bottom:clamp(20px,3vh,36px);
+}
+.setup-preview-time{
+  font-family:"Orbitron",sans-serif;
+  font-size:clamp(48px,10vw,96px);font-weight:900;
+  letter-spacing:.04em;line-height:1;color:rgba(255,255,255,.3);
+  font-variant-numeric:tabular-nums;
+}
+.setup-preview-label{
+  font-size:12px;font-weight:700;letter-spacing:.2em;color:#444;
+  margin-top:8px;text-transform:uppercase;
 }
 .setup-section{
-  width:100%;max-width:400px;margin-bottom:clamp(20px,3vh,36px);
+  width:100%;max-width:400px;margin-bottom:clamp(16px,2.5vh,28px);
 }
 .setup-section h2{
-  font-size:13px;font-weight:700;letter-spacing:.2em;color:#666;
-  margin-bottom:12px;text-transform:uppercase;
+  font-size:12px;font-weight:700;letter-spacing:.18em;color:#555;
+  margin-bottom:10px;text-transform:uppercase;
 }
 .duration-grid{
-  display:grid;grid-template-columns:1fr 1fr;gap:10px;
+  display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;
 }
 .dur-btn{
   -webkit-appearance:none;appearance:none;
-  border:1.5px solid rgba(255,255,255,.15);border-radius:14px;
-  background:rgba(255,255,255,.04);color:#fff;
-  padding:16px 0;font-size:18px;font-weight:700;letter-spacing:.04em;
+  border:1.5px solid rgba(255,255,255,.1);border-radius:12px;
+  background:transparent;color:rgba(255,255,255,.5);
+  padding:14px 0;font-size:15px;font-weight:700;letter-spacing:.04em;
   cursor:pointer;transition:all .15s;
 }
 .dur-btn:active{transform:scale(.97)}
 .dur-btn.selected{
-  border-color:rgba(255,255,255,.6);
-  background:rgba(255,255,255,.1);
+  border-color:rgba(255,255,255,.5);
+  background:rgba(255,255,255,.08);
+  color:#fff;
 }
 .toggle-row{
   display:flex;align-items:center;justify-content:space-between;
-  padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06);
+  padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);
 }
 .toggle-row:last-child{border-bottom:none}
-.toggle-label{font-size:15px;font-weight:600;color:#aaa;letter-spacing:.02em}
+.toggle-label{font-size:14px;font-weight:600;color:#777;letter-spacing:.01em}
 .switch{
-  width:50px;height:28px;border-radius:999px;
-  background:rgba(255,255,255,.12);position:relative;
+  width:46px;height:26px;border-radius:999px;
+  background:rgba(255,255,255,.1);position:relative;
   border:none;cursor:pointer;transition:background .2s;flex-shrink:0;
 }
 .switch::after{
-  content:"";position:absolute;width:22px;height:22px;
-  top:3px;left:3px;border-radius:50%;background:#555;
+  content:"";position:absolute;width:20px;height:20px;
+  top:3px;left:3px;border-radius:50%;background:#444;
   transition:all .15s ease;
 }
-.switch.on{background:rgba(255,255,255,.25)}
-.switch.on::after{left:25px;background:#fff}
+.switch.on{background:rgba(255,255,255,.22)}
+.switch.on::after{left:23px;background:#fff}
 .start-btn{
   -webkit-appearance:none;appearance:none;border:none;
-  width:100%;max-width:400px;padding:20px 0;
-  border-radius:16px;font-size:18px;font-weight:800;
+  width:100%;max-width:400px;padding:18px 0;
+  border-radius:14px;font-size:16px;font-weight:800;
   letter-spacing:.15em;cursor:pointer;
   background:#fff;color:#000;
-  transition:all .15s;margin-top:clamp(10px,2vh,24px);
+  transition:all .15s;margin-top:clamp(8px,1.5vh,16px);
 }
 .start-btn:active{transform:scale(.98);opacity:.9}
+.setup-footer{
+  width:100%;text-align:center;padding-top:clamp(10px,2vh,16px);
+  border-top:1px solid rgba(255,255,255,.04);
+}
+.setup-footer-text{
+  font-size:11px;font-weight:600;letter-spacing:.1em;color:#333;
+}
 
 /* ═══════════════════════════════════════
    TV MODE
@@ -90,23 +120,24 @@ html,body{
 .tv{
   display:none;flex-direction:column;align-items:center;justify-content:center;
   height:100%;width:100%;position:relative;
+  padding:5%;
 }
 .tv-logo{
-  height:clamp(50px,10vh,120px);width:auto;max-width:50vw;
-  object-fit:contain;opacity:.9;
-  position:absolute;top:clamp(20px,4vh,60px);left:50%;transform:translateX(-50%);
+  height:clamp(36px,7vh,80px);width:auto;max-width:30vw;
+  object-fit:contain;opacity:.85;
+  margin-bottom:clamp(12px,2.5vh,36px);
 }
 .tv-clock{
   font-family:"Orbitron",sans-serif;
-  font-size:clamp(160px,38vw,700px);
+  font-size:clamp(80px,17vw,340px);
   font-weight:900;font-variant-numeric:tabular-nums;
-  letter-spacing:.06em;line-height:1;
+  letter-spacing:.05em;line-height:1;
   transition:color .3s;
 }
 .tv-bar-wrap{
-  width:clamp(300px,65vw,1200px);height:9px;
-  margin-top:clamp(16px,3vh,50px);
-  border-radius:99px;background:rgba(255,255,255,.08);
+  width:clamp(200px,55vw,900px);height:8px;
+  margin-top:clamp(14px,2.5vh,40px);
+  border-radius:99px;background:rgba(255,255,255,.07);
   overflow:hidden;
 }
 .tv-bar{
@@ -115,9 +146,9 @@ html,body{
 }
 .tv-round{
   position:absolute;
-  bottom:clamp(16px,3vh,40px);right:clamp(20px,3vw,50px);
-  font-size:clamp(16px,1.6vw,28px);font-weight:700;
-  letter-spacing:.1em;color:rgba(255,255,255,.5);
+  bottom:clamp(14px,3vh,36px);right:clamp(16px,3vw,44px);
+  font-size:clamp(13px,1.4vw,22px);font-weight:600;
+  letter-spacing:.12em;color:rgba(255,255,255,.35);
 }
 
 /* Timer color states */
@@ -131,23 +162,23 @@ html,body{
    ═══════════════════════════════════════ */
 .transition{
   display:none;flex-direction:column;align-items:center;justify-content:center;
-  height:100%;width:100%;position:relative;
+  height:100%;width:100%;position:relative;padding:5%;
 }
 .transition-logo{
-  height:clamp(50px,10vh,120px);width:auto;max-width:50vw;
-  object-fit:contain;opacity:.9;
-  position:absolute;top:clamp(20px,4vh,60px);left:50%;transform:translateX(-50%);
+  height:clamp(36px,7vh,80px);width:auto;max-width:30vw;
+  object-fit:contain;opacity:.85;
+  position:absolute;top:clamp(20px,5%,60px);left:50%;transform:translateX(-50%);
 }
 .transition-text{
   text-align:center;line-height:1.15;
 }
 .transition-text .line1{
   display:block;
-  font-size:clamp(48px,10vw,160px);font-weight:900;letter-spacing:.08em;
+  font-size:clamp(40px,8vw,130px);font-weight:900;letter-spacing:.1em;
 }
 .transition-text .line2{
   display:block;
-  font-size:clamp(48px,10vw,160px);font-weight:900;letter-spacing:.08em;
+  font-size:clamp(40px,8vw,130px);font-weight:900;letter-spacing:.1em;
 }
 
 /* ═══════════════════════════════════════
@@ -159,13 +190,13 @@ html,body{
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:20px;cursor:pointer;
 }
-.sound-unlock .unlock-icon{font-size:64px}
+.sound-unlock .unlock-icon{font-size:56px}
 .sound-unlock .unlock-text{
-  font-size:clamp(20px,3.5vw,32px);font-weight:700;
+  font-size:clamp(18px,3vw,28px);font-weight:700;
   letter-spacing:.08em;text-align:center;padding:0 20px;
 }
 .sound-unlock .unlock-sub{
-  font-size:clamp(13px,1.8vw,18px);color:#666;font-weight:600;letter-spacing:.04em;
+  font-size:clamp(12px,1.6vw,16px);color:#555;font-weight:600;letter-spacing:.04em;
 }
 .sound-unlock.hidden{display:none}
 
@@ -173,7 +204,6 @@ html,body{
 .exit-zone{
   display:none;position:fixed;top:0;left:0;width:100px;height:100px;z-index:999;
 }
-.tv ~ .exit-zone,.transition ~ .exit-zone{display:block}
 </style>
 </head>
 <body>
@@ -189,35 +219,47 @@ html,body{
 <div class="setup" id="setupScreen">
   <div class="setup-header">
     <img class="setup-logo" id="setupLogo" alt="FLXPOD OS" src="">
+    <span class="setup-status">SESSION CONFIG</span>
   </div>
 
-  <div class="setup-section">
-    <h2>Timer Duration</h2>
-    <div class="duration-grid">
-      <button class="dur-btn" id="btn1">1 MIN</button>
-      <button class="dur-btn" id="btn3">3 MIN</button>
-      <button class="dur-btn" id="btn5">5 MIN</button>
-      <button class="dur-btn selected" id="btn15">15 MIN</button>
+  <div class="setup-body">
+    <div class="setup-preview">
+      <div class="setup-preview-time" id="previewTime">15:00</div>
+      <div class="setup-preview-label">SELECTED DURATION</div>
     </div>
+
+    <div class="setup-section">
+      <h2>Duration</h2>
+      <div class="duration-grid">
+        <button class="dur-btn" id="btn1">1</button>
+        <button class="dur-btn" id="btn3">3</button>
+        <button class="dur-btn" id="btn5">5</button>
+        <button class="dur-btn selected" id="btn15">15</button>
+      </div>
+    </div>
+
+    <div class="setup-section">
+      <h2>Audio</h2>
+      <div class="toggle-row">
+        <span class="toggle-label">One Minute Warning</span>
+        <div class="switch on" id="toggleMinute"></div>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">Switch Evolutions</span>
+        <div class="switch on" id="toggleSwitchEvo"></div>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">Sound</span>
+        <div class="switch on" id="toggleSound"></div>
+      </div>
+    </div>
+
+    <button class="start-btn" id="startSession">START SESSION</button>
   </div>
 
-  <div class="setup-section">
-    <h2>Audio</h2>
-    <div class="toggle-row">
-      <span class="toggle-label">One Minute Warning</span>
-      <div class="switch on" id="toggleMinute"></div>
-    </div>
-    <div class="toggle-row">
-      <span class="toggle-label">Switch Evolutions</span>
-      <div class="switch on" id="toggleSwitchEvo"></div>
-    </div>
-    <div class="toggle-row">
-      <span class="toggle-label">Sound</span>
-      <div class="switch on" id="toggleSound"></div>
-    </div>
+  <div class="setup-footer">
+    <span class="setup-footer-text">AUTO RECYCLE ENABLED · TIMER REPEATS INDEFINITELY</span>
   </div>
-
-  <button class="start-btn" id="startSession">START SESSION</button>
 </div>
 
 <!-- TV MODE -->
@@ -227,6 +269,7 @@ html,body{
   <div class="tv-bar-wrap"><div class="tv-bar" id="bar"></div></div>
   <div class="tv-round" id="roundDisplay">ROUND 1</div>
 </div>
+
 
 <!-- TRANSITION SCREEN -->
 <div class="transition" id="transitionScreen">
@@ -469,6 +512,7 @@ function setDuration(min){
   durationSeconds=min*60;remainingSeconds=durationSeconds;
   clearBtns();$("btn"+min).className="dur-btn selected";
   clockEl.textContent=fmt(remainingSeconds);
+  $("previewTime").textContent=fmt(remainingSeconds);
 }
 
 function bind(id,fn){
