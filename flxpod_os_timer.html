@@ -150,6 +150,13 @@ html,body{
   font-size:clamp(13px,1.4vw,22px);font-weight:600;
   letter-spacing:.12em;color:rgba(255,255,255,.35);
 }
+.tv-localtime{
+  position:absolute;
+  bottom:clamp(14px,3vh,36px);left:clamp(16px,3vw,44px);
+  font-size:clamp(13px,1.4vw,22px);font-weight:600;
+  letter-spacing:.06em;color:rgba(255,255,255,.35);
+  font-variant-numeric:tabular-nums;
+}
 
 /* Timer color states */
 .tv.state-warning .tv-clock{color:#ffd21f}
@@ -219,7 +226,7 @@ html,body{
 <div class="setup" id="setupScreen">
   <div class="setup-header">
     <img class="setup-logo" id="setupLogo" alt="FLXPOD OS" src="">
-    <span class="setup-status">SESSION CONFIG</span>
+    <span class="setup-status" id="setupTime"></span>
   </div>
 
   <div class="setup-body">
@@ -267,6 +274,7 @@ html,body{
   <img class="tv-logo" id="tvLogo" alt="FLXPOD OS" src="">
   <div class="tv-clock" id="clock">15:00</div>
   <div class="tv-bar-wrap"><div class="tv-bar" id="bar"></div></div>
+  <div class="tv-localtime" id="localTime"></div>
   <div class="tv-round" id="roundDisplay">ROUND 1</div>
 </div>
 
@@ -551,6 +559,20 @@ document.addEventListener("keydown",function(e){
     showSetup();
   }
 });
+
+// ── Local clock ──
+var localTimeEl=$("localTime");
+var setupTimeEl=$("setupTime");
+function updateLocalTime(){
+  var now=new Date();
+  var h=now.getHours(),m=now.getMinutes(),ampm=h>=12?"PM":"AM";
+  h=h%12;if(h===0)h=12;
+  var str=(h<10?" ":"")+h+":"+(m<10?"0":"")+m+" "+ampm;
+  localTimeEl.textContent=str;
+  setupTimeEl.textContent=str;
+}
+updateLocalTime();
+setInterval(updateLocalTime,10000);
 
 // ── Init ──
 showSetup();
