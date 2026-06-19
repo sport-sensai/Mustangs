@@ -15,7 +15,7 @@ html,body{width:100%;height:100%;background:#000;color:#fff;font-family:-apple-s
 body{display:grid;grid-template-rows:auto 1fr auto;padding:env(safe-area-inset-top,20px) env(safe-area-inset-right,20px) env(safe-area-inset-bottom,20px) env(safe-area-inset-left,20px);gap:16px}
 
 header{display:flex;align-items:center;justify-content:space-between;padding:8px 0}
-.logo{height:clamp(80px,12vw,140px);width:auto;object-fit:contain}
+.logo{height:clamp(120px,20vw,220px);width:auto;max-width:60vw;object-fit:contain}
 .live-indicator{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:800;letter-spacing:.1em}
 .dot{width:14px;height:14px;border-radius:50%;background:#2fd344;box-shadow:0 0 16px rgba(47,211,68,.7);flex-shrink:0}
 .dot.warn{background:#ffd21f;box-shadow:0 0 16px rgba(255,210,31,.7)}
@@ -75,7 +75,7 @@ body.tv-mode #clock{font-size:clamp(180px,28vw,500px)}
 body.tv-mode #mode{font-size:clamp(18px,2.5vw,36px);letter-spacing:.5em}
 body.tv-mode .bar-outer{width:70%;max-width:900px;height:14px;margin-top:40px}
 body.tv-mode .tv-logo{display:block}
-.tv-logo{display:none;position:absolute;bottom:clamp(30px,5vh,80px);left:50%;transform:translateX(-50%);height:clamp(80px,12vh,160px);opacity:.85}
+.tv-logo{display:none;position:absolute;bottom:clamp(30px,6vh,100px);left:50%;transform:translateX(-50%);height:clamp(120px,18vh,260px);width:auto;max-width:50vw;opacity:.9}
 
 /* Tap zone to exit TV mode */
 .tv-exit-zone{display:none;position:fixed;top:0;left:0;width:80px;height:80px;z-index:999}
@@ -91,11 +91,24 @@ body.tv-mode .tv-exit-zone{display:block}
 }
 @media(max-width:480px){
   #clock{font-size:24vw}
-  .logo{height:clamp(60px,10vw,100px)}
+  .logo{height:clamp(80px,18vw,160px);max-width:55vw}
 }
+/* Sound unlock overlay */
+.sound-unlock{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;cursor:pointer}
+.sound-unlock .unlock-icon{font-size:80px}
+.sound-unlock .unlock-text{font-size:clamp(22px,4vw,36px);font-weight:800;letter-spacing:.1em;text-align:center;padding:0 20px}
+.sound-unlock .unlock-sub{font-size:clamp(14px,2vw,20px);color:#888;font-weight:600;letter-spacing:.06em}
+.sound-unlock.hidden{display:none}
 </style>
 </head>
 <body>
+
+<!-- SOUND UNLOCK OVERLAY — iOS requires direct tap to enable audio -->
+<div class="sound-unlock" id="soundUnlock">
+  <div class="unlock-icon">🔊</div>
+  <div class="unlock-text">TAP ANYWHERE TO ENABLE SOUND</div>
+  <div class="unlock-sub">Required on iPad / iPhone</div>
+</div>
 
 <!-- TAP ZONE: triple-tap top-left to exit TV mode -->
 <div class="tv-exit-zone" id="tvExitZone"></div>
@@ -164,17 +177,35 @@ var durationSeconds=15*60,remainingSeconds=durationSeconds,running=false,interva
 function $(id){return document.getElementById(id)}
 var clockEl=$("clock"),modeEl=$("mode"),barEl=$("bar"),cardEl=$("timerCard"),startStopEl=$("startStop"),selectedDurEl=$("selectedDuration"),roundsEl=$("rounds"),dotEl=$("statusDot");
 
-// Audio unlock (required on iOS)
-function unlockAudio(){
+// iOS Audio Unlock — must happen in direct user gesture
+var soundOverlay=$("soundUnlock");
+function doUnlockAudio(){
   if(audioUnlocked)return;
-  try{var AC=window.AudioContext||window.webkitAudioContext;if(AC){if(!audioCtx)audioCtx=new AC();if(audioCtx.state==="suspended")audioCtx.resume();var o=audioCtx.createOscillator(),g=audioCtx.createGain();g.gain.value=.0001;o.connect(g);g.connect(audioCtx.destination);o.start(0);o.stop(audioCtx.currentTime+.02)}}catch(e){}
-  try{if("speechSynthesis"in window){window.speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(".");u.volume=.01;u.rate=2;window.speechSynthesis.speak(u);loadVoices()}}catch(e){}
+  try{
+    var AC=window.AudioContext||window.webkitAudioContext;
+    if(AC){
+      audioCtx=new AC();
+      var o=audioCtx.createOscillator(),g=audioCtx.createGain();
+      g.gain.value=0.3;o.frequency.value=440;o.type="sine";
+      o.connect(g);g.connect(audioCtx.destination);
+      o.start(0);o.stop(audioCtx.currentTime+0.15);
+    }
+  }catch(e){}
+  try{
+    if("speechSynthesis"in window){
+      window.speechSynthesis.cancel();
+      var u=new SpeechSynthesisUtterance("Sound enabled.");
+      u.volume=1;u.rate=1;u.lang="en-US";
+      var voices=window.speechSynthesis.getVoices();
+      for(var i=0;i<voices.length;i++){if(voices[i].lang.indexOf("en")===0){u.voice=voices[i];break}}
+      window.speechSynthesis.speak(u);
+    }
+  }catch(e){}
   audioUnlocked=true;
+  soundOverlay.classList.add("hidden");
 }
-document.addEventListener("touchstart",unlockAudio,{once:false});
-document.addEventListener("touchend",unlockAudio,{once:false});
-document.addEventListener("pointerdown",unlockAudio);
-document.addEventListener("click",unlockAudio);
+soundOverlay.addEventListener("click",doUnlockAudio);
+soundOverlay.addEventListener("touchend",function(e){e.preventDefault();doUnlockAudio()});
 
 // Wake lock
 function requestWakeLock(){try{if("wakeLock"in navigator)navigator.wakeLock.request("screen").then(function(wl){wakeLock=wl;wl.addEventListener("release",function(){wakeLock=null})}).catch(function(){})}catch(e){}}
@@ -214,27 +245,48 @@ if("speechSynthesis"in window){
 
 function say(text){
   if(!isOn("toggleSound"))return;
-  beepTone(660,.15);
-  try{
-    if(!("speechSynthesis"in window))return;
-    window.speechSynthesis.cancel();
-    var u=new SpeechSynthesisUtterance(text);
-    u.rate=.9;u.pitch=.85;u.volume=1;u.lang="en-US";
-    var voices=window.speechSynthesis.getVoices();
-    for(var i=0;i<voices.length;i++){if(voices[i].lang.indexOf("en")===0){u.voice=voices[i];break}}
-    window.speechSynthesis.speak(u);
-  }catch(e){}
+  beepTone(660,0.2);
+  setTimeout(function(){
+    try{
+      if(!("speechSynthesis"in window))return;
+      window.speechSynthesis.cancel();
+      var u=new SpeechSynthesisUtterance(text);
+      u.rate=0.9;u.pitch=0.85;u.volume=1;u.lang="en-US";
+      var voices=window.speechSynthesis.getVoices();
+      for(var i=0;i<voices.length;i++){
+        if(voices[i].lang.indexOf("en")===0&&voices[i].localService){u.voice=voices[i];break}
+      }
+      window.speechSynthesis.speak(u);
+      // iOS workaround: keep synthesis alive
+      var keepAlive=setInterval(function(){
+        if(!window.speechSynthesis.speaking){clearInterval(keepAlive)}
+        else{window.speechSynthesis.resume()}
+      },250);
+      setTimeout(function(){clearInterval(keepAlive)},10000);
+    }catch(e){}
+  },250);
 }
 
 function beepTone(freq,dur){
-  try{var AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;if(!audioCtx)audioCtx=new AC();if(audioCtx.state==="suspended")audioCtx.resume();var osc=audioCtx.createOscillator(),gain=audioCtx.createGain();osc.type="sine";osc.frequency.value=freq;var t=audioCtx.currentTime;gain.gain.setValueAtTime(.001,t);gain.gain.exponentialRampToValueAtTime(.4,t+.02);gain.gain.exponentialRampToValueAtTime(.001,t+(dur||.35));osc.connect(gain);gain.connect(audioCtx.destination);osc.start();osc.stop(t+(dur||.35)+.01)}catch(e){}
+  try{
+    if(!audioCtx)return;
+    if(audioCtx.state==="suspended")audioCtx.resume();
+    var osc=audioCtx.createOscillator(),gain=audioCtx.createGain();
+    osc.type="square";osc.frequency.value=freq;
+    var t=audioCtx.currentTime;
+    gain.gain.setValueAtTime(0.01,t);
+    gain.gain.linearRampToValueAtTime(0.6,t+0.03);
+    gain.gain.linearRampToValueAtTime(0.01,t+(dur||0.4));
+    osc.connect(gain);gain.connect(audioCtx.destination);
+    osc.start(t);osc.stop(t+(dur||0.4)+0.01);
+  }catch(e){}
 }
 
 function beep(){
   if(!isOn("toggleSound"))return;
-  beepTone(880,.15);
-  setTimeout(function(){beepTone(1100,.15)},180);
-  setTimeout(function(){beepTone(1320,.25)},360);
+  beepTone(880,0.2);
+  setTimeout(function(){beepTone(1100,0.2)},220);
+  setTimeout(function(){beepTone(1320,0.3)},440);
 }
 
 function clearBtns(){$("btn1").className="";$("btn3").className="";$("btn5").className="";$("btn15").className=""}
@@ -242,7 +294,7 @@ function setDuration(min){durationSeconds=min*60;remainingSeconds=durationSecond
 
 function startTimer(){if(running)return;running=true;lastTick=Date.now();oneMinuteSaid=remainingSeconds<=60;intervalId=window.setInterval(tick,100);requestWakeLock();render()}
 function stopTimer(){running=false;if(intervalId)window.clearInterval(intervalId);intervalId=null;releaseWakeLock();render()}
-function toggleStart(){unlockAudio();if(running)stopTimer();else startTimer()}
+function toggleStart(){if(running)stopTimer();else startTimer()}
 function resetTimer(){stopTimer();remainingSeconds=durationSeconds;oneMinuteSaid=false;render()}
 
 function completeRound(){
