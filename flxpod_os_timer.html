@@ -464,12 +464,12 @@ function flxTone(freq,dur,vol){
   try{
     if(!audioCtx){var AC=window.AudioContext||window.webkitAudioContext;if(AC)audioCtx=new AC()}
     if(!audioCtx)return;if(audioCtx.state==="suspended")audioCtx.resume();
-    var o=audioCtx.createOscillator(),g=audioCtx.createGain();
-    o.type="square";o.frequency.value=freq;
+    var o=audioCtx.createOscillator(),g=audioCtx.createGain(),comp=audioCtx.createDynamicsCompressor();
+    o.type="sine";o.frequency.value=freq;
     var t=audioCtx.currentTime;
     g.gain.setValueAtTime(0.001,t);g.gain.exponentialRampToValueAtTime(vol||0.8,t+0.01);
     g.gain.exponentialRampToValueAtTime(0.001,t+dur);
-    o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(t+dur+0.02);
+    o.connect(g);g.connect(comp);comp.connect(audioCtx.destination);o.start();o.stop(t+dur+0.02);
   }catch(e){}
 }
 function flxSay(text){
