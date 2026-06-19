@@ -508,6 +508,10 @@ function flxTone(freq,dur,vol){
     o.connect(g);g.connect(comp);comp.connect(audioCtx.destination);o.start();o.stop(t+dur+0.02);
   }catch(e){}
 }
+function flxAlert(pattern){
+  if(!isOn("toggleSound"))return;
+  pattern.forEach(function(n){setTimeout(function(){flxTone(n[0],n[1],n[2])},n[3])});
+}
 function flxSay(text){
   if(!isOn("toggleSound"))return;
   flxTone(660,0.2,0.7);
@@ -564,16 +568,16 @@ function flxTick(){
   flxRender();
 }
 function flxAdvance(){
-  if(phase==="work"){if(restSec>0){flxEnterPhase("rest");flxTone(620,0.3,0.85);flxSay("Rest.");flxRender();return}flxCompleteRound();return}
+  if(phase==="work"){if(restSec>0){flxEnterPhase("rest");flxAlert([[600,0.18,0.9,0],[500,0.18,0.9,200],[400,0.25,0.9,400]]);flxSay("Rest.");flxRender();return}flxCompleteRound();return}
   if(phase==="rest"){flxCompleteRound()}
 }
 function flxCompleteRound(){
   if(totalRounds!==0&&curRound>=totalRounds){
     running=false;if(flxInterval)clearInterval(flxInterval);flxInterval=null;
-    phase="done";remaining=0;flxTone(1050,0.5,0.9);flxSay("Session complete.");flxRender();return;
+    phase="done";remaining=0;flxAlert([[880,0.2,0.95,0],[1050,0.2,0.95,220],[1320,0.4,0.95,440]]);flxSay("Session complete.");flxRender();return;
   }
   running=false;if(flxInterval)clearInterval(flxInterval);flxInterval=null;
-  flxTone(1000,0.32,0.85);
+  flxAlert([[800,0.15,0.9,0],[1000,0.15,0.9,180],[1200,0.2,0.9,360]]);
   curRound++;flxEnterPhase("work");running=true;lastTick=Date.now();
   flxInterval=setInterval(flxTick,100);flxRender();
 }
