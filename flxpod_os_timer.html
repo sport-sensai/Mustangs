@@ -92,7 +92,7 @@ html,body{
 .tv{
   display:none;flex-direction:column;align-items:center;justify-content:center;
   height:100%;width:100%;position:relative;
-  padding:2% 5% 12%;
+  padding:6% 5% 6%;
 }
 .tv-logo{
   position:absolute;top:clamp(12px,3%,36px);left:50%;transform:translateX(-50%);
@@ -111,8 +111,7 @@ html,body{
 }
 .tv-info{
   display:flex;align-items:center;justify-content:center;
-  gap:clamp(24px,5vw,72px);
-  margin-top:clamp(14px,2.5vh,32px);
+  margin-top:clamp(24px,5vh,64px);
 }
 .tv-info span{
   font-size:clamp(11px,1.1vw,17px);font-weight:400;
@@ -317,7 +316,6 @@ html,body{
   <div class="tv-bar-wrap"><div class="tv-bar" id="flx-bar"></div></div>
   <div class="tv-info">
     <span id="localTime"></span>
-    <span id="flx-round-label">ROUND 1</span>
   </div>
 </div>
 
@@ -519,7 +517,7 @@ function flxEnterPhase(p){phase=p;remaining=(p==="work")?workSec:restSec;phaseDu
 function flxTick(){
   if(!running)return;
   var now=Date.now(),dt=(now-lastTick)/1000;lastTick=now;remaining-=dt;
-  if(!oneMinSaid&&remaining<=60&&remaining>0&&phaseDur>65&&phase!=="rest"&&isOn("toggleMinute")){oneMinSaid=true;flxSay("One minute remaining.")}
+  if(!oneMinSaid&&remaining<=60&&remaining>0&&phaseDur>61&&phase!=="rest"&&isOn("toggleMinute")){oneMinSaid=true;flxSay("One minute remaining.")}
   if(remaining<=10&&remaining>0){var sec=Math.ceil(remaining);if(sec!==lastBeepSec){lastBeepSec=sec;flxTone(sec<=3?900:680,0.15,sec<=3?0.9:0.7)}}
   if(remaining<=0){flxAdvance();return}
   flxRender();
