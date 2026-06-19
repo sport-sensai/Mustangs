@@ -123,16 +123,22 @@ html,body{
   padding:5%;
 }
 .tv-logo{
-  height:clamp(36px,7vh,80px);width:auto;max-width:30vw;
-  object-fit:contain;opacity:.85;
-  margin-bottom:clamp(12px,2.5vh,36px);
+  height:clamp(50px,10vh,130px);width:auto;max-width:45vw;
+  object-fit:contain;opacity:.9;
+  margin-bottom:clamp(10px,2vh,30px);
 }
 .tv-clock{
   font-family:"Orbitron",sans-serif;
-  font-size:clamp(80px,17vw,340px);
-  font-weight:900;font-variant-numeric:tabular-nums;
-  letter-spacing:.05em;line-height:1;
+  font-size:clamp(100px,22vw,440px);
+  font-weight:900;line-height:1;
   transition:color .3s;
+  display:flex;align-items:baseline;justify-content:center;
+}
+.digit{
+  display:inline-block;width:.65em;text-align:center;
+}
+.sep{
+  display:inline-block;width:.3em;text-align:center;
 }
 .tv-bar-wrap{
   width:clamp(200px,55vw,900px);height:8px;
@@ -172,8 +178,8 @@ html,body{
   height:100%;width:100%;position:relative;padding:5%;
 }
 .transition-logo{
-  height:clamp(36px,7vh,80px);width:auto;max-width:30vw;
-  object-fit:contain;opacity:.85;
+  height:clamp(50px,10vh,130px);width:auto;max-width:45vw;
+  object-fit:contain;opacity:.9;
   position:absolute;top:clamp(20px,5%,60px);left:50%;transform:translateX(-50%);
 }
 .transition-text{
@@ -272,7 +278,7 @@ html,body{
 <!-- TV MODE -->
 <div class="tv" id="tvScreen">
   <img class="tv-logo" id="tvLogo" alt="FLXPOD OS" src="">
-  <div class="tv-clock" id="clock">15:00</div>
+  <div class="tv-clock" id="clock"><span class="digit">1</span><span class="digit">5</span><span class="sep">:</span><span class="digit">0</span><span class="digit">0</span></div>
   <div class="tv-bar-wrap"><div class="tv-bar" id="bar"></div></div>
   <div class="tv-localtime" id="localTime"></div>
   <div class="tv-round" id="roundDisplay">ROUND 1</div>
@@ -308,6 +314,7 @@ var intervalId=null;
 var lastTick=null;
 var rounds=0;
 var oneMinuteSaid=false;
+var lastBeepSecond=-1;
 var audioCtx=null;
 var audioUnlocked=false;
 var wakeLock=null;
@@ -368,10 +375,16 @@ document.addEventListener("visibilitychange",function(){if(document.visibilitySt
 function isOn(id){return $(id).className.indexOf("on")!==-1}
 function toggleSwitch(id){var el=$(id);el.className=el.className.indexOf("on")!==-1?"switch":"switch on"}
 
-function fmt(t){
+function fmtPlain(t){
   t=Math.max(0,Math.ceil(t));
   var m=Math.floor(t/60),s=t%60;
   return(m<10?"0":"")+m+":"+(s<10?"0":"")+s;
+}
+function fmtDigits(t){
+  t=Math.max(0,Math.ceil(t));
+  var m=Math.floor(t/60),s=t%60;
+  var ms=(m<10?"0":"")+m,ss=(s<10?"0":"")+s;
+  return'<span class="digit">'+ms[0]+'</span><span class="digit">'+ms[1]+'</span><span class="sep">:</span><span class="digit">'+ss[0]+'</span><span class="digit">'+ss[1]+'</span>';
 }
 
 // ── Audio ──
@@ -439,7 +452,7 @@ function showTransition(){
 
 // ── Render ──
 function render(){
-  clockEl.textContent=fmt(remainingSeconds);
+  clockEl.innerHTML=fmtDigits(remainingSeconds);
   roundEl.textContent="ROUND "+rounds;
   var pct=((durationSeconds-remainingSeconds)/durationSeconds)*100;
   if(pct<0)pct=0;if(pct>100)pct=100;
@@ -454,7 +467,7 @@ function render(){
 function startSession(){
   remainingSeconds=durationSeconds;
   rounds=1;
-  oneMinuteSaid=false;
+  oneMinuteSaid=false;lastBeepSecond=-1;
   running=true;
   lastTick=Date.now();
   render();
@@ -480,7 +493,7 @@ function completeRound(){
     setTimeout(function(){
       rounds++;
       remainingSeconds=durationSeconds;
-      oneMinuteSaid=false;
+      oneMinuteSaid=false;lastBeepSecond=-1;
       running=true;
       lastTick=Date.now();
       render();
@@ -490,7 +503,7 @@ function completeRound(){
   }else{
     rounds++;
     remainingSeconds=durationSeconds;
-    oneMinuteSaid=false;
+    oneMinuteSaid=false;lastBeepSecond=-1;
     running=true;
     lastTick=Date.now();
     render();
@@ -505,7 +518,14 @@ function tick(){
   if(remainingSeconds<=60&&remainingSeconds>0&&!oneMinuteSaid&&isOn("toggleMinute")){
     oneMinuteSaid=true;say("One minute remaining.");
   }
-  if(remainingSeconds<=0){completeRound();return}
+  if(remainingSeconds<=10&&remainingSeconds>0&&isOn("toggleSound")){
+    var sec=Math.ceil(remainingSeconds);
+    if(sec!==lastBeepSecond&&sec>=1&&sec<=10){
+      lastBeepSecond=sec;
+      beepTone(sec<=3?1200:900,0.08);
+    }
+  }
+  if(remainingSeconds<=0){lastBeepSecond=-1;completeRound();return}
   render();
 }
 
@@ -519,8 +539,8 @@ function clearBtns(){
 function setDuration(min){
   durationSeconds=min*60;remainingSeconds=durationSeconds;
   clearBtns();$("btn"+min).className="dur-btn selected";
-  clockEl.textContent=fmt(remainingSeconds);
-  $("previewTime").textContent=fmt(remainingSeconds);
+  clockEl.innerHTML=fmtDigits(remainingSeconds);
+  $("previewTime").textContent=fmtPlain(remainingSeconds);
 }
 
 function bind(id,fn){
