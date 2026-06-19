@@ -9,7 +9,7 @@
 <title>FLXPOD OS</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{
@@ -47,9 +47,9 @@ html,body{
   text-align:center;margin-bottom:clamp(20px,3vh,36px);
 }
 .setup-preview-time{
-  font-family:"Orbitron",sans-serif;
-  font-size:clamp(48px,10vw,96px);font-weight:900;
-  letter-spacing:.04em;line-height:1;color:rgba(255,255,255,.3);
+  font-family:"Share Tech Mono","Courier New",monospace;
+  font-size:clamp(48px,10vw,96px);font-weight:400;
+  letter-spacing:.08em;line-height:1;color:rgba(255,255,255,.3);
   font-variant-numeric:tabular-nums;
 }
 .setup-preview-label{
@@ -123,26 +123,20 @@ html,body{
   padding:5%;
 }
 .tv-logo{
-  height:clamp(70px,18vh,220px);width:auto;max-width:55vw;
+  height:clamp(90px,27vh,320px);width:auto;max-width:60vw;
   object-fit:contain;opacity:.9;
-  margin-bottom:clamp(6px,1vh,20px);
+  margin-bottom:clamp(4px,1vh,16px);
 }
 .tv-clock{
-  font-family:"Orbitron",sans-serif;
+  font-family:"Share Tech Mono","Courier New",monospace;
   font-size:clamp(90px,20vw,400px);
-  font-weight:900;line-height:1;
+  font-weight:400;line-height:1;
+  letter-spacing:.12em;
   transition:color .3s;
-  display:flex;align-items:baseline;justify-content:center;
-}
-.digit{
-  display:inline-block;width:.82em;text-align:center;
-}
-.sep{
-  display:inline-block;width:.35em;text-align:center;
 }
 .tv-bar-wrap{
   width:clamp(200px,55vw,900px);height:8px;
-  margin-top:clamp(14px,2.5vh,40px);
+  margin-top:clamp(12px,2vh,36px);
   border-radius:99px;background:rgba(255,255,255,.07);
   overflow:hidden;
 }
@@ -150,17 +144,14 @@ html,body{
   width:0%;height:100%;border-radius:99px;
   background:#fff;transition:width .12s linear;
 }
-.tv-round{
-  position:absolute;
-  bottom:clamp(14px,3vh,36px);right:clamp(16px,3vw,44px);
-  font-size:clamp(13px,1.4vw,22px);font-weight:600;
-  letter-spacing:.12em;color:rgba(255,255,255,.35);
+.tv-info{
+  display:flex;align-items:center;justify-content:center;
+  gap:clamp(20px,4vw,60px);
+  margin-top:clamp(10px,2vh,30px);
 }
-.tv-localtime{
-  position:absolute;
-  bottom:clamp(14px,3vh,36px);left:clamp(16px,3vw,44px);
-  font-size:clamp(13px,1.4vw,22px);font-weight:600;
-  letter-spacing:.06em;color:rgba(255,255,255,.35);
+.tv-info span{
+  font-size:clamp(12px,1.3vw,20px);font-weight:600;
+  letter-spacing:.1em;color:rgba(255,255,255,.3);
   font-variant-numeric:tabular-nums;
 }
 
@@ -178,7 +169,7 @@ html,body{
   height:100%;width:100%;position:relative;padding:5%;
 }
 .transition-logo{
-  height:clamp(70px,18vh,220px);width:auto;max-width:55vw;
+  height:clamp(90px,27vh,320px);width:auto;max-width:55vw;
   object-fit:contain;opacity:.9;
   position:absolute;top:clamp(20px,5%,60px);left:50%;transform:translateX(-50%);
 }
@@ -288,10 +279,12 @@ html,body{
 <div class="tv" id="tvScreen">
   <button class="tv-back" id="backBtn">&#x2190; END</button>
   <img class="tv-logo" id="tvLogo" alt="FLXPOD OS" src="">
-  <div class="tv-clock" id="clock"><span class="digit">1</span><span class="digit">5</span><span class="sep">:</span><span class="digit">0</span><span class="digit">0</span></div>
+  <div class="tv-clock" id="clock">15:00</div>
   <div class="tv-bar-wrap"><div class="tv-bar" id="bar"></div></div>
-  <div class="tv-localtime" id="localTime"></div>
-  <div class="tv-round" id="roundDisplay">ROUND 1</div>
+  <div class="tv-info">
+    <span id="localTime"></span>
+    <span id="roundDisplay">ROUND 1</span>
+  </div>
 </div>
 
 
@@ -388,12 +381,6 @@ function fmtPlain(t){
   var m=Math.floor(t/60),s=t%60;
   return(m<10?"0":"")+m+":"+(s<10?"0":"")+s;
 }
-function fmtDigits(t){
-  t=Math.max(0,Math.ceil(t));
-  var m=Math.floor(t/60),s=t%60;
-  var ms=(m<10?"0":"")+m,ss=(s<10?"0":"")+s;
-  return'<span class="digit">'+ms[0]+'</span><span class="digit">'+ms[1]+'</span><span class="sep">:</span><span class="digit">'+ss[0]+'</span><span class="digit">'+ss[1]+'</span>';
-}
 
 // ── Audio ──
 function beepTone(freq,dur){
@@ -460,7 +447,7 @@ function showTransition(){
 
 // ── Render ──
 function render(){
-  clockEl.innerHTML=fmtDigits(remainingSeconds);
+  clockEl.textContent=fmtPlain(remainingSeconds);
   roundEl.textContent="ROUND "+rounds;
   var pct=((durationSeconds-remainingSeconds)/durationSeconds)*100;
   if(pct<0)pct=0;if(pct>100)pct=100;
@@ -547,7 +534,7 @@ function clearBtns(){
 function setDuration(min){
   durationSeconds=min*60;remainingSeconds=durationSeconds;
   clearBtns();$("btn"+min).className="dur-btn selected";
-  clockEl.innerHTML=fmtDigits(remainingSeconds);
+  clockEl.textContent=fmtPlain(remainingSeconds);
   $("previewTime").textContent=fmtPlain(remainingSeconds);
 }
 
