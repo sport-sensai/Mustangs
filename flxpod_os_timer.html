@@ -95,7 +95,7 @@ html,body{
   padding:6% 5% 6%;
 }
 .tv-logo{
-  position:absolute;top:clamp(20px,5%,60px);left:50%;transform:translateX(-50%);
+  position:absolute;top:clamp(30px,10%,80px);left:50%;transform:translateX(-50%);
   height:clamp(35px,11vh,140px);width:auto;max-width:45vw;
   object-fit:contain;opacity:.7;
 }
@@ -309,11 +309,11 @@ html,body{
   <button class="tv-back" id="backBtn">&#x2190; END</button>
   <img class="tv-logo" id="tvLogo" alt="FLXPOD OS" src="">
   <div id="flx-run-led"></div>
-  <div class="flx-phaseRow" style="margin-top:clamp(24px,5vh,64px)">
+  <div class="flx-phaseRow" id="tvPhaseRow" style="margin-top:clamp(24px,5vh,64px)">
     <span class="flx-chip work act">WORK</span>
     <span class="flx-chip rest">REST</span>
   </div>
-  <div class="tv-bar-wrap"><div class="tv-bar" id="flx-bar"></div></div>
+  <div class="tv-bar-wrap" id="tvBarWrap"><div class="tv-bar" id="flx-bar"></div></div>
   <div class="tv-info">
     <span id="localTime"></span>
   </div>
@@ -497,12 +497,15 @@ function flxRender(){
   if(runLed)runLed.update(curRound,remaining);
   var bar=document.getElementById("flx-bar");
   if(bar){var pct=phaseDur>0?((phaseDur-remaining)/phaseDur)*100:0;bar.style.width=Math.max(0,Math.min(100,pct))+"%"}
+  var hasInterval=restSec>0;
+  var tvPR=document.getElementById("tvPhaseRow");
+  var tvBW=document.getElementById("tvBarWrap");
+  if(tvPR)tvPR.style.display=hasInterval?"flex":"none";
+  if(tvBW)tvBW.style.display=hasInterval?"block":"none";
   var chips=document.querySelectorAll(".flx-chip.work");
   for(var i=0;i<chips.length;i++)chips[i].classList.toggle("act",phase==="work");
   var rchips=document.querySelectorAll(".flx-chip.rest");
   for(var j=0;j<rchips.length;j++)rchips[j].classList.toggle("act",phase==="rest");
-  var rl=document.getElementById("flx-round-label");
-  if(rl)rl.textContent=totalRounds===0?("ROUND "+curRound):("ROUND "+curRound+" / "+totalRounds);
   var vw=document.getElementById("flx-val-work"),vr=document.getElementById("flx-val-rest"),vR=document.getElementById("flx-val-rounds");
   if(vw)vw.textContent=flxFmt(workSec);
   if(vr)vr.textContent=flxFmt(restSec);
