@@ -95,9 +95,9 @@ html,body{
   padding:2% 5% 12%;
 }
 .tv-logo{
-  height:clamp(70px,22vh,280px);width:auto;max-width:55vw;
+  height:clamp(35px,11vh,140px);width:auto;max-width:45vw;
   object-fit:contain;opacity:.7;
-  margin-bottom:clamp(4px,1vh,16px);
+  margin-bottom:clamp(12px,3vh,40px);
 }
 .tv-bar-wrap{
   width:clamp(200px,50vw,800px);height:3px;
@@ -292,10 +292,6 @@ html,body{
         <div class="switch on" id="toggleMinute"></div>
       </div>
       <div class="toggle-row">
-        <span class="toggle-label">Switch Evolutions</span>
-        <div class="switch on" id="toggleSwitchEvo"></div>
-      </div>
-      <div class="toggle-row">
         <span class="toggle-label">Sound</span>
         <div class="switch on" id="toggleSound"></div>
       </div>
@@ -314,7 +310,7 @@ html,body{
   <button class="tv-back" id="backBtn">&#x2190; END</button>
   <img class="tv-logo" id="tvLogo" alt="FLXPOD OS" src="">
   <div id="flx-run-led"></div>
-  <div class="flx-phaseRow" style="margin-top:clamp(6px,1vh,14px)">
+  <div class="flx-phaseRow" style="margin-top:clamp(16px,3vh,40px)">
     <span class="flx-chip work act">WORK</span>
     <span class="flx-chip rest">REST</span>
   </div>
@@ -409,11 +405,10 @@ function showTransition(){setupScreen.style.display="none";tvScreen.style.displa
 var FLX_SEG={"0":"abcdef","1":"bc","2":"abdeg","3":"abcdg","4":"bcfg","5":"acdfg","6":"acdefg","7":"abc","8":"abcdefg","9":"abcdfg"," ":""};
 var FLX_PRESETS={
   coach:[
-    {name:"STATION 15",work:900,rest:0,rounds:0},
-    {name:"STATION 5",work:300,rest:0,rounds:0},
+    {name:"STATION 1",work:60,rest:0,rounds:0},
     {name:"STATION 3",work:180,rest:0,rounds:0},
-    {name:"SPEED/POWER",work:30,rest:90,rounds:8},
-    {name:"INTERVAL 1:1",work:60,rest:60,rounds:10}
+    {name:"STATION 5",work:300,rest:0,rounds:0},
+    {name:"STATION 15",work:900,rest:0,rounds:0}
   ],
   cond:[
     {name:"TABATA",work:20,rest:10,rounds:8},
@@ -461,10 +456,10 @@ function flxBuildLed(mount){
 var setupLed=flxBuildLed(document.getElementById("flx-setup-led"));
 var runLed=flxBuildLed(document.getElementById("flx-run-led"));
 
-var workSec=900,restSec=0,totalRounds=0;
-var curRound=1,phase="ready",remaining=900,phaseDur=900;
+var workSec=60,restSec=0,totalRounds=0;
+var curRound=1,phase="ready",remaining=60,phaseDur=60;
 var running=false,flxInterval=null,lastTick=null,oneMinSaid=false,lastBeepSec=null;
-var presetName="STATION 15";
+var presetName="STATION 1";
 
 function flxTone(freq,dur,vol){
   if(!isOn("toggleSound"))return;
@@ -540,15 +535,8 @@ function flxCompleteRound(){
   }
   running=false;if(flxInterval)clearInterval(flxInterval);flxInterval=null;
   flxTone(1000,0.32,0.34);
-  function resume(){
-    curRound++;flxEnterPhase("work");running=true;lastTick=Date.now();
-    flxInterval=setInterval(flxTick,100);flxRender();
-  }
-  if(isOn("toggleSwitchEvo")){
-    showTransition();
-    setTimeout(function(){flxSay("Switch evolutions.")},300);
-    setTimeout(function(){showTV();resume()},2500);
-  }else{resume()}
+  curRound++;flxEnterPhase("work");running=true;lastTick=Date.now();
+  flxInterval=setInterval(flxTick,100);flxRender();
 }
 
 function flxStart(){
@@ -585,7 +573,7 @@ function flxBuildPresets(){
   }
   fill("flx-coach-grid",FLX_PRESETS.coach);
   fill("flx-cond-grid",FLX_PRESETS.cond);
-  var first=document.querySelector('[data-flx-preset="STATION 15"]');if(first)first.classList.add("sel");
+  var first=document.querySelector('[data-flx-preset="STATION 1"]');if(first)first.classList.add("sel");
 }
 flxBuildPresets();
 
@@ -596,7 +584,7 @@ for(var si=0;si<sbtns.length;si++)(function(btn){
 })(sbtns[si]);
 
 // ── Toggle switches ──
-["toggleMinute","toggleSwitchEvo","toggleSound"].forEach(function(id){
+["toggleMinute","toggleSound"].forEach(function(id){
   var el=document.getElementById(id);if(!el)return;
   el.addEventListener("click",function(e){e.preventDefault();toggleSwitch(id)});
 });
