@@ -95,13 +95,13 @@ html,body{
   padding:2% 5% 12%;
 }
 .tv-logo{
+  position:absolute;top:clamp(12px,3%,36px);left:50%;transform:translateX(-50%);
   height:clamp(35px,11vh,140px);width:auto;max-width:45vw;
   object-fit:contain;opacity:.7;
-  margin-bottom:clamp(12px,3vh,40px);
 }
 .tv-bar-wrap{
   width:clamp(200px,50vw,800px);height:3px;
-  margin-top:clamp(12px,2.5vh,32px);
+  margin-top:clamp(20px,4vh,56px);
   border-radius:2px;background:rgba(255,255,255,.06);
   overflow:hidden;
 }
@@ -112,7 +112,7 @@ html,body{
 .tv-info{
   display:flex;align-items:center;justify-content:center;
   gap:clamp(24px,5vw,72px);
-  margin-top:clamp(10px,2vh,28px);
+  margin-top:clamp(14px,2.5vh,32px);
 }
 .tv-info span{
   font-size:clamp(11px,1.1vw,17px);font-weight:400;
@@ -310,7 +310,7 @@ html,body{
   <button class="tv-back" id="backBtn">&#x2190; END</button>
   <img class="tv-logo" id="tvLogo" alt="FLXPOD OS" src="">
   <div id="flx-run-led"></div>
-  <div class="flx-phaseRow" style="margin-top:clamp(16px,3vh,40px)">
+  <div class="flx-phaseRow" style="margin-top:clamp(24px,5vh,64px)">
     <span class="flx-chip work act">WORK</span>
     <span class="flx-chip rest">REST</span>
   </div>
@@ -467,16 +467,16 @@ function flxTone(freq,dur,vol){
     if(!audioCtx){var AC=window.AudioContext||window.webkitAudioContext;if(AC)audioCtx=new AC()}
     if(!audioCtx)return;if(audioCtx.state==="suspended")audioCtx.resume();
     var o=audioCtx.createOscillator(),g=audioCtx.createGain();
-    o.type="sine";o.frequency.value=freq;
+    o.type="square";o.frequency.value=freq;
     var t=audioCtx.currentTime;
-    g.gain.setValueAtTime(0.001,t);g.gain.exponentialRampToValueAtTime(vol||0.3,t+0.015);
+    g.gain.setValueAtTime(0.001,t);g.gain.exponentialRampToValueAtTime(vol||0.8,t+0.01);
     g.gain.exponentialRampToValueAtTime(0.001,t+dur);
     o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(t+dur+0.02);
   }catch(e){}
 }
 function flxSay(text){
   if(!isOn("toggleSound"))return;
-  flxTone(660,0.2,0.2);
+  flxTone(660,0.2,0.7);
   setTimeout(function(){
     try{
       if(!("speechSynthesis"in window))return;
@@ -520,28 +520,28 @@ function flxTick(){
   if(!running)return;
   var now=Date.now(),dt=(now-lastTick)/1000;lastTick=now;remaining-=dt;
   if(!oneMinSaid&&remaining<=60&&remaining>0&&phaseDur>65&&phase!=="rest"&&isOn("toggleMinute")){oneMinSaid=true;flxSay("One minute remaining.")}
-  if(remaining<=10&&remaining>0){var sec=Math.ceil(remaining);if(sec!==lastBeepSec){lastBeepSec=sec;flxTone(sec<=3?900:680,0.09,sec<=3?0.3:0.18)}}
+  if(remaining<=10&&remaining>0){var sec=Math.ceil(remaining);if(sec!==lastBeepSec){lastBeepSec=sec;flxTone(sec<=3?900:680,0.15,sec<=3?0.9:0.7)}}
   if(remaining<=0){flxAdvance();return}
   flxRender();
 }
 function flxAdvance(){
-  if(phase==="work"){if(restSec>0){flxEnterPhase("rest");flxTone(620,0.3,0.32);flxSay("Rest.");flxRender();return}flxCompleteRound();return}
+  if(phase==="work"){if(restSec>0){flxEnterPhase("rest");flxTone(620,0.3,0.85);flxSay("Rest.");flxRender();return}flxCompleteRound();return}
   if(phase==="rest"){flxCompleteRound()}
 }
 function flxCompleteRound(){
   if(totalRounds!==0&&curRound>=totalRounds){
     running=false;if(flxInterval)clearInterval(flxInterval);flxInterval=null;
-    phase="done";remaining=0;flxTone(1050,0.5,0.36);flxSay("Session complete.");flxRender();return;
+    phase="done";remaining=0;flxTone(1050,0.5,0.9);flxSay("Session complete.");flxRender();return;
   }
   running=false;if(flxInterval)clearInterval(flxInterval);flxInterval=null;
-  flxTone(1000,0.32,0.34);
+  flxTone(1000,0.32,0.85);
   curRound++;flxEnterPhase("work");running=true;lastTick=Date.now();
   flxInterval=setInterval(flxTick,100);flxRender();
 }
 
 function flxStart(){
   if(running)return;
-  if(phase==="ready"||phase==="done"){curRound=1;flxEnterPhase("work");flxTone(1050,0.18,0.34)}
+  if(phase==="ready"||phase==="done"){curRound=1;flxEnterPhase("work");flxTone(1050,0.18,0.85)}
   running=true;lastTick=Date.now();flxInterval=setInterval(flxTick,100);flxRender();
 }
 function flxStop(){running=false;if(flxInterval)clearInterval(flxInterval);flxInterval=null;flxRender()}
