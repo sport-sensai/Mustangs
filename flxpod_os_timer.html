@@ -40,21 +40,8 @@ html,body{
   font-size:12px;font-weight:400;letter-spacing:.15em;color:rgba(255,255,255,.3);
 }
 .setup-body{
-  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:0;
-}
-.setup-preview{
-  text-align:center;margin-bottom:clamp(20px,3vh,36px);
-}
-.setup-preview-time{
-  font-family:"Barlow",sans-serif;
-  font-size:clamp(52px,11vw,100px);font-weight:500;
-  letter-spacing:.05em;line-height:1;color:rgba(255,255,255,.25);
-  font-variant-numeric:tabular-nums;
-}
-.setup-preview-label{
-  font-size:11px;font-weight:400;letter-spacing:.25em;color:rgba(255,255,255,.2);
-  margin-top:10px;text-transform:uppercase;
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  gap:0;overflow-y:auto;padding-bottom:20px;
 }
 .setup-section{
   width:100%;max-width:400px;margin-bottom:clamp(16px,2.5vh,28px);
@@ -62,23 +49,6 @@ html,body{
 .setup-section h2{
   font-size:11px;font-weight:500;letter-spacing:.2em;color:rgba(255,255,255,.3);
   margin-bottom:10px;text-transform:uppercase;
-}
-.duration-grid{
-  display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;
-}
-.dur-btn{
-  -webkit-appearance:none;appearance:none;
-  border:1px solid rgba(255,255,255,.08);border-radius:6px;
-  background:transparent;color:rgba(255,255,255,.4);
-  padding:14px 0;font-family:"Barlow",sans-serif;
-  font-size:15px;font-weight:500;letter-spacing:.06em;
-  cursor:pointer;transition:all .15s;
-}
-.dur-btn:active{transform:scale(.97)}
-.dur-btn.selected{
-  border-color:rgba(255,255,255,.3);
-  background:rgba(255,255,255,.05);
-  color:#fff;
 }
 .toggle-row{
   display:flex;align-items:center;justify-content:space-between;
@@ -129,14 +99,6 @@ html,body{
   object-fit:contain;opacity:.7;
   margin-bottom:clamp(4px,1vh,16px);
 }
-.tv-clock{
-  font-family:"Barlow",sans-serif;
-  font-size:clamp(100px,22vw,420px);
-  font-weight:500;line-height:1;
-  letter-spacing:.04em;
-  font-variant-numeric:tabular-nums;
-  transition:color .3s;
-}
 .tv-bar-wrap{
   width:clamp(200px,50vw,800px);height:3px;
   margin-top:clamp(12px,2.5vh,32px);
@@ -159,9 +121,7 @@ html,body{
 }
 
 /* Timer color states */
-.tv.state-warning .tv-clock{color:#f5c518}
 .tv.state-warning .tv-bar{background:#f5c518}
-.tv.state-critical .tv-clock{color:#e8271b}
 .tv.state-critical .tv-bar{background:#e8271b}
 
 /* ═══════════════════════════════════════
@@ -222,6 +182,50 @@ html,body{
   cursor:pointer;transition:color .2s;z-index:10;
 }
 .tv-back:active{color:rgba(255,255,255,.5)}
+
+/* ═══════════════════════════════════════
+   FLXPOD — Segmented LED
+   ═══════════════════════════════════════ */
+.flx-led{--ledw:clamp(46px,9vw,128px);display:flex;align-items:center;justify-content:center;transform:skewX(-5deg)}
+.flx-led .flx-round{--w:calc(var(--ledw)*0.56);display:flex;margin-right:calc(var(--ledw)*0.30)}
+.flx-led .flx-time{--w:var(--ledw);display:flex;align-items:center}
+#flx-setup-led{--ledw:clamp(36px,7vw,80px);margin-bottom:10px}
+#flx-run-led{--ledw:clamp(56px,13vw,190px)}
+.flx-digit{--t:calc(var(--w)*0.17);--h:calc(var(--w)*1.84);--vl:calc((var(--h) - 3*var(--t))/2);--on:#ff3030;--off:rgba(255,70,70,.06);--glow:rgba(255,40,40,.55);position:relative;width:var(--w);height:var(--h);margin:0 calc(var(--w)*0.07)}
+.flx-digit.flx-green{--on:#36e25b;--off:rgba(90,255,130,.07);--glow:rgba(50,230,90,.5)}
+.flx-seg{position:absolute;background:var(--off)}
+.flx-seg.on{background:var(--on);box-shadow:0 0 calc(var(--w)*0.12) var(--glow)}
+.flx-seg.flx-h{left:0;width:var(--w);height:var(--t);clip-path:polygon(0 50%,15% 0,85% 0,100% 50%,85% 100%,15% 100%)}
+.flx-seg.flx-v{width:var(--t);height:var(--vl);clip-path:polygon(50% 0,100% 15%,100% 85%,50% 100%,0 85%,0 15%)}
+.flx-a{top:0}.flx-g{top:calc((var(--h) - var(--t))/2)}.flx-d{bottom:0}
+.flx-f{top:calc(var(--t)*0.5);left:0}.flx-b{top:calc(var(--t)*0.5);right:0}
+.flx-e{bottom:calc(var(--t)*0.5);left:0}.flx-c{bottom:calc(var(--t)*0.5);right:0}
+.flx-colon{--t:calc(var(--ledw)*0.17);width:calc(var(--ledw)*0.40);height:calc(var(--ledw)*1.84);position:relative;display:inline-block}
+.flx-colon .flx-cd{position:absolute;left:50%;transform:translateX(-50%);width:var(--t);height:var(--t);border-radius:50%;background:#ff3030;box-shadow:0 0 calc(var(--ledw)*0.1) rgba(255,40,40,.55)}
+.flx-colon .flx-cd.top{top:30%}.flx-colon .flx-cd.bot{top:60%}
+
+/* ---- WORK/REST chips ---- */
+.flx-phaseRow{display:flex;gap:14px;justify-content:center;margin-top:12px}
+.flx-chip{font-family:"Barlow",sans-serif;font-weight:600;letter-spacing:.18em;padding:5px 14px;border-radius:4px;border:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.15);font-size:clamp(11px,1.2vw,16px)}
+.flx-chip.work.act{color:#06160a;background:#36e25b;border-color:#36e25b}
+.flx-chip.rest.act{color:#1a1300;background:#ffce2e;border-color:#ffce2e}
+
+/* ---- Preset tiles ---- */
+.flx-groupLabel{color:rgba(255,255,255,.25);font-family:"Barlow",sans-serif;font-size:10px;font-weight:500;letter-spacing:.22em;margin:14px 0 6px}
+.flx-presetGrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.flx-preset{-webkit-appearance:none;appearance:none;border:1px solid rgba(255,255,255,.08);border-radius:6px;background:rgba(255,255,255,.03);color:#fff;padding:10px 8px;text-align:center;cursor:pointer;font-family:"Barlow",sans-serif;transition:all .15s}
+.flx-preset .pn{font-size:13px;font-weight:600;letter-spacing:.04em}
+.flx-preset .pd{font-size:10px;color:rgba(255,255,255,.3);font-weight:400;margin-top:3px;letter-spacing:.04em}
+.flx-preset.sel{border-color:rgba(54,226,91,.5);box-shadow:0 0 12px rgba(54,226,91,.1)}
+.flx-preset:active{transform:scale(.98)}
+
+/* ---- Editable steppers ---- */
+.flx-stepRow{display:flex;align-items:center;justify-content:space-between;margin:8px 0}
+.flx-stepRow .lab{font-family:"Barlow",sans-serif;font-size:11px;font-weight:500;letter-spacing:.15em;color:rgba(255,255,255,.35)}
+.flx-stepper{display:flex;align-items:center;gap:10px}
+.flx-stepper .val{min-width:72px;text-align:center;font-family:"Barlow",sans-serif;font-size:20px;font-weight:500;font-variant-numeric:tabular-nums;letter-spacing:.04em}
+.flx-sbtn{-webkit-appearance:none;appearance:none;width:40px;height:40px;border-radius:6px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:rgba(255,255,255,.5);font-size:20px;font-weight:500;line-height:1;cursor:pointer;font-family:"Barlow",sans-serif}
+.flx-sbtn:active{transform:scale(.96);background:rgba(255,255,255,.08)}
 </style>
 </head>
 <body>
@@ -241,18 +245,43 @@ html,body{
   </div>
 
   <div class="setup-body">
-    <div class="setup-preview">
-      <div class="setup-preview-time" id="previewTime">15:00</div>
-      <div class="setup-preview-label">SELECTED DURATION</div>
+    <div id="flx-setup-led"></div>
+    <div class="flx-phaseRow">
+      <span class="flx-chip work act">WORK</span>
+      <span class="flx-chip rest">REST</span>
     </div>
 
     <div class="setup-section">
-      <h2>Duration</h2>
-      <div class="duration-grid">
-        <button class="dur-btn" id="btn1">1</button>
-        <button class="dur-btn" id="btn3">3</button>
-        <button class="dur-btn" id="btn5">5</button>
-        <button class="dur-btn selected" id="btn15">15</button>
+      <div class="flx-groupLabel">COACHING</div>
+      <div class="flx-presetGrid" id="flx-coach-grid"></div>
+      <div class="flx-groupLabel">CONDITIONING</div>
+      <div class="flx-presetGrid" id="flx-cond-grid"></div>
+    </div>
+
+    <div class="setup-section">
+      <div class="flx-stepRow">
+        <span class="lab">WORK</span>
+        <div class="flx-stepper">
+          <button class="flx-sbtn" type="button" data-flx-step="work" data-flx-dir="-1">&minus;</button>
+          <span class="val" id="flx-val-work">15:00</span>
+          <button class="flx-sbtn" type="button" data-flx-step="work" data-flx-dir="1">+</button>
+        </div>
+      </div>
+      <div class="flx-stepRow">
+        <span class="lab">REST</span>
+        <div class="flx-stepper">
+          <button class="flx-sbtn" type="button" data-flx-step="rest" data-flx-dir="-1">&minus;</button>
+          <span class="val" id="flx-val-rest">00:00</span>
+          <button class="flx-sbtn" type="button" data-flx-step="rest" data-flx-dir="1">+</button>
+        </div>
+      </div>
+      <div class="flx-stepRow">
+        <span class="lab">ROUNDS</span>
+        <div class="flx-stepper">
+          <button class="flx-sbtn" type="button" data-flx-step="rounds" data-flx-dir="-1">&minus;</button>
+          <span class="val" id="flx-val-rounds">&infin;</span>
+          <button class="flx-sbtn" type="button" data-flx-step="rounds" data-flx-dir="1">+</button>
+        </div>
       </div>
     </div>
 
@@ -284,11 +313,15 @@ html,body{
 <div class="tv" id="tvScreen">
   <button class="tv-back" id="backBtn">&#x2190; END</button>
   <img class="tv-logo" id="tvLogo" alt="FLXPOD OS" src="">
-  <div class="tv-clock" id="clock">15:00</div>
-  <div class="tv-bar-wrap"><div class="tv-bar" id="bar"></div></div>
+  <div id="flx-run-led"></div>
+  <div class="flx-phaseRow" style="margin-top:clamp(6px,1vh,14px)">
+    <span class="flx-chip work act">WORK</span>
+    <span class="flx-chip rest">REST</span>
+  </div>
+  <div class="tv-bar-wrap"><div class="tv-bar" id="flx-bar"></div></div>
   <div class="tv-info">
     <span id="localTime"></span>
-    <span id="roundDisplay">ROUND 1</span>
+    <span id="flx-round-label">ROUND 1</span>
   </div>
 </div>
 
@@ -312,107 +345,97 @@ document.getElementById("setupLogo").src=LOGO_SRC;
 document.getElementById("tvLogo").src=LOGO_SRC;
 document.getElementById("transitionLogo").src=LOGO_SRC;
 
-// ── State ──
-var durationSeconds=15*60;
-var remainingSeconds=durationSeconds;
-var running=false;
-var intervalId=null;
-var lastTick=null;
-var rounds=0;
-var oneMinuteSaid=false;
-var lastBeepSecond=-1;
-var audioCtx=null;
-var audioUnlocked=false;
-var wakeLock=null;
-
-// ── DOM refs ──
-function $(id){return document.getElementById(id)}
-var setupScreen=$("setupScreen");
-var tvScreen=$("tvScreen");
-var transitionScreen=$("transitionScreen");
-var clockEl=$("clock");
-var barEl=$("bar");
-var roundEl=$("roundDisplay");
-var soundOverlay=$("soundUnlock");
-
-// ── Audio unlock (iOS requirement) ──
-function doUnlockAudio(){
-  if(audioUnlocked)return;
-  try{
-    var AC=window.AudioContext||window.webkitAudioContext;
-    if(AC){
-      audioCtx=new AC();
-      var o=audioCtx.createOscillator(),g=audioCtx.createGain();
-      g.gain.value=0.3;o.frequency.value=440;o.type="sine";
-      o.connect(g);g.connect(audioCtx.destination);
-      o.start(0);o.stop(audioCtx.currentTime+0.12);
-    }
-  }catch(e){}
-  try{
-    if("speechSynthesis"in window){
-      window.speechSynthesis.cancel();
-      var u=new SpeechSynthesisUtterance("Sound enabled.");
-      u.volume=1;u.rate=1;u.lang="en-US";
-      var voices=window.speechSynthesis.getVoices();
-      for(var i=0;i<voices.length;i++){if(voices[i].lang.indexOf("en")===0){u.voice=voices[i];break}}
-      window.speechSynthesis.speak(u);
-    }
-  }catch(e){}
-  audioUnlocked=true;
-  soundOverlay.classList.add("hidden");
-}
-soundOverlay.addEventListener("click",doUnlockAudio);
-soundOverlay.addEventListener("touchend",function(e){e.preventDefault();doUnlockAudio()});
-
-// Preload voices
-if("speechSynthesis"in window){
-  window.speechSynthesis.getVoices();
-  window.speechSynthesis.onvoiceschanged=function(){window.speechSynthesis.getVoices()};
-}
-
-// ── Wake Lock ──
-function requestWakeLock(){
-  try{if("wakeLock"in navigator)navigator.wakeLock.request("screen").then(function(wl){wakeLock=wl;wl.addEventListener("release",function(){wakeLock=null})}).catch(function(){})}catch(e){}
-}
-function releaseWakeLock(){try{if(wakeLock){wakeLock.release();wakeLock=null}}catch(e){}}
-document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible"&&running)requestWakeLock()});
-
 // ── Helpers ──
-function isOn(id){return $(id).className.indexOf("on")!==-1}
-function toggleSwitch(id){var el=$(id);el.className=el.className.indexOf("on")!==-1?"switch":"switch on"}
+function isOn(id){var el=document.getElementById(id);return el&&el.className.indexOf("on")!==-1}
+function toggleSwitch(id){var el=document.getElementById(id);el.className=el.className.indexOf("on")!==-1?"switch":"switch on"}
 
-function fmtPlain(t){
-  t=Math.max(0,Math.ceil(t));
-  var m=Math.floor(t/60),s=t%60;
-  return(m<10?"0":"")+m+":"+(s<10?"0":"")+s;
+// ── Screen management ──
+var setupScreen=document.getElementById("setupScreen");
+var tvScreen=document.getElementById("tvScreen");
+var transitionScreen=document.getElementById("transitionScreen");
+function showSetup(){setupScreen.style.display="flex";tvScreen.style.display="none";transitionScreen.style.display="none"}
+function showTV(){setupScreen.style.display="none";tvScreen.style.display="flex";transitionScreen.style.display="none"}
+function showTransition(){setupScreen.style.display="none";tvScreen.style.display="none";transitionScreen.style.display="flex"}
+
+// ═══════════════════════════════════════
+//  FLXPOD OS — Programmable Timer + Segmented LED Engine
+// ═══════════════════════════════════════
+var FLX_SEG={"0":"abcdef","1":"bc","2":"abdeg","3":"abcdg","4":"bcfg","5":"acdfg","6":"acdefg","7":"abc","8":"abcdefg","9":"abcdfg"," ":""};
+var FLX_PRESETS={
+  coach:[
+    {name:"STATION 15",work:900,rest:0,rounds:0},
+    {name:"STATION 5",work:300,rest:0,rounds:0},
+    {name:"STATION 3",work:180,rest:0,rounds:0},
+    {name:"SPEED/POWER",work:30,rest:90,rounds:8},
+    {name:"INTERVAL 1:1",work:60,rest:60,rounds:10}
+  ],
+  cond:[
+    {name:"TABATA",work:20,rest:10,rounds:8},
+    {name:"EMOM",work:60,rest:0,rounds:10},
+    {name:"AMRAP 20",work:1200,rest:0,rounds:1},
+    {name:"FGB",work:60,rest:0,rounds:17},
+    {name:"SPRINT 30/30",work:30,rest:30,rounds:12}
+  ]
+};
+
+function flxDigit(green){
+  var d=document.createElement("div");d.className="flx-digit"+(green?" flx-green":"");
+  var defs=[["a","flx-h"],["b","flx-v"],["c","flx-v"],["d","flx-h"],["e","flx-v"],["f","flx-v"],["g","flx-h"]];
+  var segs={};
+  defs.forEach(function(p){var s=document.createElement("div");s.className="flx-seg "+p[1]+" flx-"+p[0];d.appendChild(s);segs[p[0]]=s});
+  return{el:d,set:function(ch){var on=FLX_SEG[ch]||"";for(var k in segs)segs[k].classList.toggle("on",on.indexOf(k)>=0)}};
+}
+function flxColon(){
+  var c=document.createElement("div");c.className="flx-colon";
+  var t=document.createElement("div");t.className="flx-cd top";
+  var b=document.createElement("div");b.className="flx-cd bot";
+  c.appendChild(t);c.appendChild(b);return c;
+}
+function flxBuildLed(mount){
+  if(!mount)return null;
+  mount.classList.add("flx-led");mount.innerHTML="";
+  var r=document.createElement("div");r.className="flx-round";
+  var rd=[flxDigit(true),flxDigit(true)];
+  rd.forEach(function(d){r.appendChild(d.el)});mount.appendChild(r);
+  var t=document.createElement("div");t.className="flx-time";
+  var td=[flxDigit(),flxDigit(),flxDigit(),flxDigit()];
+  t.appendChild(td[0].el);t.appendChild(td[1].el);t.appendChild(flxColon());
+  t.appendChild(td[2].el);t.appendChild(td[3].el);mount.appendChild(t);
+  var pad=function(n){n=Math.max(0,n|0);return n<10?"0"+n:""+n};
+  return{update:function(roundNum,totalSec){
+    totalSec=Math.max(0,Math.ceil(totalSec));
+    var m=pad(Math.floor(totalSec/60)),s=pad(totalSec%60);
+    td[0].set(m[0]);td[1].set(m[1]);td[2].set(s[0]);td[3].set(s[1]);
+    var rr=pad(roundNum>99?roundNum%100:roundNum);
+    rd[0].set(rr[0]);rd[1].set(rr[1]);
+  }};
 }
 
-// ── Audio ──
-function beepTone(freq,dur){
+// ── FLX Engine ──
+var setupLed=flxBuildLed(document.getElementById("flx-setup-led"));
+var runLed=flxBuildLed(document.getElementById("flx-run-led"));
+
+var workSec=900,restSec=0,totalRounds=0;
+var curRound=1,phase="ready",remaining=900,phaseDur=900;
+var running=false,flxInterval=null,lastTick=null,oneMinSaid=false,lastBeepSec=null;
+var presetName="STATION 15";
+
+function flxTone(freq,dur,vol){
+  if(!isOn("toggleSound"))return;
   try{
-    if(!audioCtx)return;
-    if(audioCtx.state==="suspended")audioCtx.resume();
-    var osc=audioCtx.createOscillator(),gain=audioCtx.createGain();
-    osc.type="square";osc.frequency.value=freq;
+    if(!audioCtx){var AC=window.AudioContext||window.webkitAudioContext;if(AC)audioCtx=new AC()}
+    if(!audioCtx)return;if(audioCtx.state==="suspended")audioCtx.resume();
+    var o=audioCtx.createOscillator(),g=audioCtx.createGain();
+    o.type="sine";o.frequency.value=freq;
     var t=audioCtx.currentTime;
-    gain.gain.setValueAtTime(0.01,t);
-    gain.gain.linearRampToValueAtTime(0.5,t+0.03);
-    gain.gain.linearRampToValueAtTime(0.01,t+(dur||0.4));
-    osc.connect(gain);gain.connect(audioCtx.destination);
-    osc.start(t);osc.stop(t+(dur||0.4)+0.01);
+    g.gain.setValueAtTime(0.001,t);g.gain.exponentialRampToValueAtTime(vol||0.3,t+0.015);
+    g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+    o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(t+dur+0.02);
   }catch(e){}
 }
-
-function beep(){
+function flxSay(text){
   if(!isOn("toggleSound"))return;
-  beepTone(880,0.2);
-  setTimeout(function(){beepTone(1100,0.2)},220);
-  setTimeout(function(){beepTone(1320,0.3)},440);
-}
-
-function say(text){
-  if(!isOn("toggleSound"))return;
-  beepTone(660,0.2);
+  flxTone(660,0.2,0.2);
   setTimeout(function(){
     try{
       if(!("speechSynthesis"in window))return;
@@ -420,170 +443,149 @@ function say(text){
       var u=new SpeechSynthesisUtterance(text);
       u.rate=0.9;u.pitch=0.85;u.volume=1;u.lang="en-US";
       var voices=window.speechSynthesis.getVoices();
-      for(var i=0;i<voices.length;i++){
-        if(voices[i].lang.indexOf("en")===0&&voices[i].localService){u.voice=voices[i];break}
-      }
+      for(var i=0;i<voices.length;i++){if(voices[i].lang.indexOf("en")===0&&voices[i].localService){u.voice=voices[i];break}}
       window.speechSynthesis.speak(u);
-      var keepAlive=setInterval(function(){
-        if(!window.speechSynthesis.speaking){clearInterval(keepAlive)}
-        else{window.speechSynthesis.resume()}
-      },250);
+      var keepAlive=setInterval(function(){if(!window.speechSynthesis.speaking)clearInterval(keepAlive);else window.speechSynthesis.resume()},250);
       setTimeout(function(){clearInterval(keepAlive)},10000);
     }catch(e){}
   },250);
 }
 
-// ── Screen management ──
-function showSetup(){
-  setupScreen.style.display="flex";
-  tvScreen.style.display="none";
-  transitionScreen.style.display="none";
-}
-function showTV(){
-  setupScreen.style.display="none";
-  tvScreen.style.display="flex";
-  transitionScreen.style.display="none";
-}
-function showTransition(){
-  setupScreen.style.display="none";
-  tvScreen.style.display="none";
-  transitionScreen.style.display="flex";
-}
+var flxFmt=function(s){s=Math.max(0,s|0);var p=function(n){return n<10?"0"+n:""+n};return p(Math.floor(s/60))+":"+p(s%60)};
 
-// ── Render ──
-function render(){
-  clockEl.textContent=fmtPlain(remainingSeconds);
-  roundEl.textContent="ROUND "+rounds;
-  var pct=((durationSeconds-remainingSeconds)/durationSeconds)*100;
-  if(pct<0)pct=0;if(pct>100)pct=100;
-  barEl.style.width=pct+"%";
-
+function flxRender(){
+  if(setupLed)setupLed.update(curRound,remaining);
+  if(runLed)runLed.update(curRound,remaining);
+  var bar=document.getElementById("flx-bar");
+  if(bar){var pct=phaseDur>0?((phaseDur-remaining)/phaseDur)*100:0;bar.style.width=Math.max(0,Math.min(100,pct))+"%"}
+  var chips=document.querySelectorAll(".flx-chip.work");
+  for(var i=0;i<chips.length;i++)chips[i].classList.toggle("act",phase==="work");
+  var rchips=document.querySelectorAll(".flx-chip.rest");
+  for(var j=0;j<rchips.length;j++)rchips[j].classList.toggle("act",phase==="rest");
+  var rl=document.getElementById("flx-round-label");
+  if(rl)rl.textContent=totalRounds===0?("ROUND "+curRound):("ROUND "+curRound+" / "+totalRounds);
+  var vw=document.getElementById("flx-val-work"),vr=document.getElementById("flx-val-rest"),vR=document.getElementById("flx-val-rounds");
+  if(vw)vw.textContent=flxFmt(workSec);
+  if(vr)vr.textContent=flxFmt(restSec);
+  if(vR)vR.textContent=totalRounds===0?"∞":(totalRounds<10?"0"+totalRounds:""+totalRounds);
   tvScreen.className="tv";
-  if(running&&remainingSeconds<=10){tvScreen.className="tv state-critical"}
-  else if(running&&remainingSeconds<=60){tvScreen.className="tv state-warning"}
+  if(running&&remaining<=10)tvScreen.className="tv state-critical";
+  else if(running&&remaining<=60)tvScreen.className="tv state-warning";
 }
 
-// ── Timer logic ──
-function startSession(){
-  remainingSeconds=durationSeconds;
-  rounds=1;
-  oneMinuteSaid=false;lastBeepSecond=-1;
-  running=true;
-  lastTick=Date.now();
-  render();
-  showTV();
-  requestWakeLock();
-  // Go fullscreen
-  try{
-    var el=document.documentElement;
-    if(el.requestFullscreen)el.requestFullscreen();
-    else if(el.webkitRequestFullscreen)el.webkitRequestFullscreen();
-  }catch(e){}
-  intervalId=window.setInterval(tick,100);
+function flxEnterPhase(p){phase=p;remaining=(p==="work")?workSec:restSec;phaseDur=remaining;oneMinSaid=false;lastBeepSec=null}
+
+function flxTick(){
+  if(!running)return;
+  var now=Date.now(),dt=(now-lastTick)/1000;lastTick=now;remaining-=dt;
+  if(!oneMinSaid&&remaining<=60&&remaining>0&&phaseDur>65&&phase!=="rest"&&isOn("toggleMinute")){oneMinSaid=true;flxSay("One minute remaining.")}
+  if(remaining<=10&&remaining>0){var sec=Math.ceil(remaining);if(sec!==lastBeepSec){lastBeepSec=sec;flxTone(sec<=3?900:680,0.09,sec<=3?0.3:0.18)}}
+  if(remaining<=0){flxAdvance();return}
+  flxRender();
 }
-
-function completeRound(){
-  running=false;
-  if(intervalId)window.clearInterval(intervalId);intervalId=null;
-  beep();
-
+function flxAdvance(){
+  if(phase==="work"){if(restSec>0){flxEnterPhase("rest");flxTone(620,0.3,0.32);flxSay("Rest.");flxRender();return}flxCompleteRound();return}
+  if(phase==="rest"){flxCompleteRound()}
+}
+function flxCompleteRound(){
+  if(totalRounds!==0&&curRound>=totalRounds){
+    running=false;if(flxInterval)clearInterval(flxInterval);flxInterval=null;
+    phase="done";remaining=0;flxTone(1050,0.5,0.36);flxSay("Session complete.");flxRender();return;
+  }
+  running=false;if(flxInterval)clearInterval(flxInterval);flxInterval=null;
+  flxTone(1000,0.32,0.34);
+  function resume(){
+    curRound++;flxEnterPhase("work");running=true;lastTick=Date.now();
+    flxInterval=setInterval(flxTick,100);flxRender();
+  }
   if(isOn("toggleSwitchEvo")){
     showTransition();
-    setTimeout(function(){say("Switch evolutions.")},300);
-    setTimeout(function(){
-      rounds++;
-      remainingSeconds=durationSeconds;
-      oneMinuteSaid=false;lastBeepSecond=-1;
-      running=true;
-      lastTick=Date.now();
-      render();
-      showTV();
-      intervalId=window.setInterval(tick,100);
-    },2000);
-  }else{
-    rounds++;
-    remainingSeconds=durationSeconds;
-    oneMinuteSaid=false;lastBeepSecond=-1;
-    running=true;
-    lastTick=Date.now();
-    render();
-    intervalId=window.setInterval(tick,100);
+    setTimeout(function(){flxSay("Switch evolutions.")},300);
+    setTimeout(function(){showTV();resume()},2500);
+  }else{resume()}
+}
+
+function flxStart(){
+  if(running)return;
+  if(phase==="ready"||phase==="done"){curRound=1;flxEnterPhase("work");flxTone(1050,0.18,0.34)}
+  running=true;lastTick=Date.now();flxInterval=setInterval(flxTick,100);flxRender();
+}
+function flxStop(){running=false;if(flxInterval)clearInterval(flxInterval);flxInterval=null;flxRender()}
+function flxReset(){flxStop();curRound=1;phase="ready";remaining=workSec;phaseDur=workSec;oneMinSaid=false;lastBeepSec=null;flxRender()}
+
+function flxClearSel(){var els=document.querySelectorAll(".flx-preset.sel");for(var i=0;i<els.length;i++)els[i].classList.remove("sel")}
+function flxLoad(p){workSec=p.work;restSec=p.rest;totalRounds=p.rounds;presetName=p.name;flxClearSel();var t=document.querySelector('[data-flx-preset="'+p.name+'"]');if(t)t.classList.add("sel");flxReset()}
+function flxStep(which,dir){
+  if(which==="work")workSec=Math.max(5,Math.min(5999,workSec+dir*5));
+  else if(which==="rest")restSec=Math.max(0,Math.min(5999,restSec+dir*5));
+  else if(which==="rounds")totalRounds=Math.max(0,Math.min(99,totalRounds+dir));
+  presetName="CUSTOM";flxClearSel();
+  if(!running){phase="ready";curRound=1;remaining=workSec;phaseDur=workSec}
+  flxRender();
+}
+
+// ── Build preset tiles ──
+function flxBuildPresets(){
+  function fill(id,list){
+    var c=document.getElementById(id);if(!c)return;
+    list.forEach(function(p){
+      var b=document.createElement("button");b.type="button";b.className="flx-preset";
+      b.setAttribute("data-flx-preset",p.name);
+      var desc=(p.rest>0?flxFmt(p.work)+" / "+flxFmt(p.rest):flxFmt(p.work))+" · "+(p.rounds===0?"∞":p.rounds+"x");
+      b.innerHTML='<div class="pn">'+p.name+'</div><div class="pd">'+desc+'</div>';
+      b.addEventListener("click",function(){flxLoad(p)});
+      c.appendChild(b);
+    });
   }
+  fill("flx-coach-grid",FLX_PRESETS.coach);
+  fill("flx-cond-grid",FLX_PRESETS.cond);
+  var first=document.querySelector('[data-flx-preset="STATION 15"]');if(first)first.classList.add("sel");
 }
+flxBuildPresets();
 
-function tick(){
-  if(!running)return;
-  var now=Date.now(),elapsed=(now-lastTick)/1000;lastTick=now;
-  remainingSeconds-=elapsed;
-  if(remainingSeconds<=60&&remainingSeconds>0&&!oneMinuteSaid&&isOn("toggleMinute")){
-    oneMinuteSaid=true;say("One minute remaining.");
-  }
-  if(remainingSeconds<=10&&remainingSeconds>0&&isOn("toggleSound")){
-    var sec=Math.ceil(remainingSeconds);
-    if(sec!==lastBeepSecond&&sec>=1&&sec<=10){
-      lastBeepSecond=sec;
-      beepTone(sec<=3?1200:800,0.15);
-    }
-  }
-  if(remainingSeconds<=0){lastBeepSecond=-1;completeRound();return}
-  render();
-}
+// ── Stepper buttons ──
+var sbtns=document.querySelectorAll(".flx-sbtn");
+for(var si=0;si<sbtns.length;si++)(function(btn){
+  btn.addEventListener("click",function(){flxStep(btn.getAttribute("data-flx-step"),parseInt(btn.getAttribute("data-flx-dir"),10))});
+})(sbtns[si]);
 
-// ── Setup controls ──
-function clearBtns(){
-  $("btn1").className="dur-btn";
-  $("btn3").className="dur-btn";
-  $("btn5").className="dur-btn";
-  $("btn15").className="dur-btn";
-}
-function setDuration(min){
-  durationSeconds=min*60;remainingSeconds=durationSeconds;
-  clearBtns();$("btn"+min).className="dur-btn selected";
-  clockEl.textContent=fmtPlain(remainingSeconds);
-  $("previewTime").textContent=fmtPlain(remainingSeconds);
-}
+// ── Toggle switches ──
+["toggleMinute","toggleSwitchEvo","toggleSound"].forEach(function(id){
+  var el=document.getElementById(id);if(!el)return;
+  el.addEventListener("click",function(e){e.preventDefault();toggleSwitch(id)});
+});
 
-function bind(id,fn){
-  var el=$(id);if(!el)return;
-  el.addEventListener("click",function(ev){ev.preventDefault();fn()});
-}
+// ── Start session ──
+document.getElementById("startSession").addEventListener("click",function(e){
+  e.preventDefault();
+  showTV();requestWakeLock();
+  try{var el=document.documentElement;if(el.requestFullscreen)el.requestFullscreen();else if(el.webkitRequestFullscreen)el.webkitRequestFullscreen()}catch(ex){}
+  flxStart();
+});
 
-bind("btn1",function(){setDuration(1)});
-bind("btn3",function(){setDuration(3)});
-bind("btn5",function(){setDuration(5)});
-bind("btn15",function(){setDuration(15)});
-bind("toggleMinute",function(){toggleSwitch("toggleMinute")});
-bind("toggleSwitchEvo",function(){toggleSwitch("toggleSwitchEvo")});
-bind("toggleSound",function(){toggleSwitch("toggleSound")});
-bind("startSession",function(){startSession()});
-
-// ── Back to setup ──
+// ── Exit session ──
 function exitSession(){
-  running=false;
-  if(intervalId)window.clearInterval(intervalId);intervalId=null;
-  releaseWakeLock();
+  flxReset();releaseWakeLock();
   try{if(document.exitFullscreen)document.exitFullscreen();else if(document.webkitExitFullscreen)document.webkitExitFullscreen()}catch(e){}
   showSetup();
 }
-bind("backBtn",exitSession);
+document.getElementById("backBtn").addEventListener("click",function(e){e.preventDefault();exitSession()});
 document.addEventListener("keydown",function(e){if(e.key==="Escape")exitSession()});
 
 // ── Local clock ──
-var localTimeEl=$("localTime");
-var setupTimeEl=$("setupTime");
+var localTimeEl=document.getElementById("localTime");
+var setupTimeEl=document.getElementById("setupTime");
 function updateLocalTime(){
-  var now=new Date();
-  var h=now.getHours(),m=now.getMinutes(),ampm=h>=12?"PM":"AM";
+  var now=new Date(),h=now.getHours(),m=now.getMinutes(),ampm=h>=12?"PM":"AM";
   h=h%12;if(h===0)h=12;
   var str=(h<10?" ":"")+h+":"+(m<10?"0":"")+m+" "+ampm;
-  localTimeEl.textContent=str;
-  setupTimeEl.textContent=str;
+  if(localTimeEl)localTimeEl.textContent=str;
+  if(setupTimeEl)setupTimeEl.textContent=str;
 }
-updateLocalTime();
-setInterval(updateLocalTime,10000);
+updateLocalTime();setInterval(updateLocalTime,10000);
 
 // ── Init ──
-showSetup();
+showSetup();flxReset();
 })();
 </script>
 </body>
