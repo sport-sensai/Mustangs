@@ -284,3 +284,9 @@ For issues or questions:
 - Icons by MaterialIcons (@expo/vector-icons)
 - Nutrition data from CalorieNinjas API
 - Inspired by the needs of student athletes everywhere
+
+---
+
+## Also in this repository
+
+- **[movement-lab/](movement-lab/)**: Functional Anatomy Movement Lab, a responsive web prototype (Vite + React + three.js) built from its [PRD](movement-lab/docs/PRD.md). It is self-contained and separate from the MealTrack Expo app.
