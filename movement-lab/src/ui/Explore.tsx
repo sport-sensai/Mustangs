@@ -19,7 +19,7 @@ const ROUTE_LABEL: Record<ResolveResult['route'], string> = {
   empty: '',
 };
 
-const EXAMPLES = ['Front squat', 'Wide stance paused front squat', 'Sprint acceleration', 'Show me a right-handed baseball swing', 'Hit', 'Goblet squat'];
+const EXAMPLES = ['Front squat', 'Sprint acceleration', 'Right-handed baseball swing', 'Left-handed pitch with a long stride', 'Catcher throw to second', 'Throw', 'Goblet squat'];
 
 export function Explore({ onOpen, mode }: Props) {
   const [text, setText] = useState('');

@@ -127,7 +127,10 @@ export function PhasePanel({ scene, phase, onSelect }: { scene: SceneState; phas
           <tr><th scope="row">Hip flexion</th><td>{ja.hipFlexL.toFixed(0)}°</td><td>{ja.hipFlexR.toFixed(0)}°</td></tr>
           <tr><th scope="row">Knee flexion</th><td>{ja.kneeFlexL.toFixed(0)}°</td><td>{ja.kneeFlexR.toFixed(0)}°</td></tr>
           <tr><th scope="row">Ankle dorsiflexion</th><td>{ja.ankleDorsiL.toFixed(0)}°</td><td>{ja.ankleDorsiR.toFixed(0)}°</td></tr>
+          <tr><th scope="row">Elbow flexion</th><td>{ja.elbowFlexL.toFixed(0)}°</td><td>{ja.elbowFlexR.toFixed(0)}°</td></tr>
+          <tr><th scope="row">Arm elevation</th><td>{ja.shoulderElevL.toFixed(0)}°</td><td>{ja.shoulderElevR.toFixed(0)}°</td></tr>
           <tr><th scope="row">Trunk lean</th><td colSpan={2}>{ja.trunkLean.toFixed(0)}° from vertical</td></tr>
+          <tr><th scope="row">Hip–shoulder separation</th><td colSpan={2}>{ja.separation.toFixed(0)}° (horizontal plane)</td></tr>
         </tbody>
       </table>
       <h3 className="sub">Structures that contribute together</h3>

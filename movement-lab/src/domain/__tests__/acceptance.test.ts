@@ -44,7 +44,7 @@ describe('movement resolution (MOV-01..05, AC-01, AC-09)', () => {
   });
 
   it('AC-09: planned movements are declined with a supported alternative, never simulated', () => {
-    const r = resolveMovement('Show me a right-handed baseball swing');
+    const r = resolveMovement('Show me a right-handed softball windmill pitch');
     expect(r.route).toBe('unsupported');
     expect(r.spec.handedness).toBe('right');
     expect(r.spec.movementId).toBeUndefined();
@@ -221,7 +221,7 @@ describe('coach (AI-01..07)', () => {
 
 describe('anatomy content integrity', () => {
   it('every structure maps to rendered geometry and existing evidence', () => {
-    const meshes = new Set([...RIG_VISUALS.map((v) => v.meshId), ...['hip', 'knee', 'ankle', 'shoulder'].flatMap((j) => [`j-${j}-l`, `j-${j}-r`])]);
+    const meshes = new Set([...RIG_VISUALS.map((v) => v.meshId), ...['hip', 'knee', 'ankle', 'shoulder', 'elbow'].flatMap((j) => [`j-${j}-l`, `j-${j}-r`])]);
     for (const s of STRUCTURES) {
       for (const m of s.meshIds) expect(meshes.has(m), `${s.id} → ${m}`).toBe(true);
       for (const e of s.evidenceIds) expect(EVIDENCE[e], `${s.id} → ${e}`).toBeTruthy();
@@ -288,5 +288,108 @@ describe('saved workspace (SAVE-01..02, AC-12)', () => {
     const broken: KV = { getItem: () => { throw new Error('blocked'); }, setItem: () => { throw new Error('blocked'); }, removeItem: () => {} };
     expect(listSaved(broken)).toEqual([]);
     expect(saveScene(saved, broken)).toBe(false);
+  });
+});
+
+describe('baseball skills: swing, pitch, catcher throw', () => {
+  const SKILLS = ['baseball-swing', 'baseball-pitch', 'catcher-throw'];
+
+  it('resolves skill requests, including handedness as a real parameter', () => {
+    const swing = resolveMovement('Show me a right-handed baseball swing');
+    expect(swing.spec.movementId).toBe('baseball-swing');
+    expect(swing.spec.params.handedness).toBe(0);
+    const lefty = resolveMovement('left-handed pitch with a long stride');
+    expect(lefty.spec.movementId).toBe('baseball-pitch');
+    expect(lefty.spec.params.handedness).toBe(1);
+    expect(lefty.spec.params.strideLength).toBe(146);
+    expect(resolveMovement('catcher throw to second').spec.movementId).toBe('catcher-throw');
+    expect(resolveMovement('throw').route).toBe('ambiguous');
+    expect(resolveMovement('softball swing').route).toBe('approximation');
+  });
+
+  it('phases tile the clip and the segment timing matches the declared duration', () => {
+    for (const id of SKILLS) {
+      const m = MOVEMENT_BY_ID[id];
+      const ph = phasesFor(m, defaultParams(m));
+      expect(ph[0].start).toBe(0);
+      expect(ph[ph.length - 1].end).toBeCloseTo(1, 9);
+      for (let i = 1; i < ph.length; i++) expect(ph[i].start).toBeCloseTo(ph[i - 1].end, 9);
+      expect(cycleDuration(m, defaultParams(m))).toBeCloseTo(m.baseDuration, 2);
+    }
+  });
+
+  it('segment lengths stay constant and planted feet do not slide', () => {
+    for (const id of SKILLS) {
+      const m = MOVEMENT_BY_ID[id];
+      const p = defaultParams(m);
+      for (let i = 0; i <= 40; i++) {
+        const P = poseAt(id, i / 40, p).points;
+        expect(dist(P.hipL, P.kneeL)).toBeCloseTo(BODY.thigh, 3);
+        expect(dist(P.kneeR, P.ankleR)).toBeCloseTo(BODY.shank, 3);
+        expect(dist(P.shoulderR, P.elbowR)).toBeCloseTo(BODY.upperArm, 3);
+        expect(dist(P.elbowL, P.wristL)).toBeCloseTo(BODY.forearm, 3);
+      }
+    }
+    // The pitcher's front foot stays planted from foot contact through release.
+    const pitch = MOVEMENT_BY_ID['baseball-pitch'];
+    const ph = phasesFor(pitch, defaultParams(pitch));
+    const fc = ph.find((x) => x.id === 'stride')!.end;
+    const rel = ph.find((x) => x.id === 'acceleration')!.end;
+    const toeAtFc = poseAt('baseball-pitch', fc, defaultParams(pitch)).points.toeL;
+    for (const t of [fc + 0.01, (fc + rel) / 2, rel]) {
+      expect(dist(poseAt('baseball-pitch', t, defaultParams(pitch)).points.toeL, toeAtFc)).toBeLessThan(0.01);
+    }
+  });
+
+  it('pitch shows hip–shoulder separation at foot contact and pelvis-before-trunk sequencing', () => {
+    const run = runSimulation('baseball-pitch', defaultParams(MOVEMENT_BY_ID['baseball-pitch']));
+    const v = (id: string) => run.outputs.find((o) => o.id === id)!.value!;
+    expect(v('sep-fc')).toBeGreaterThan(25);
+    expect(v('sequence')).toBeGreaterThan(0);
+    expect(v('stride')).toBeCloseTo(1.35, 1);
+    expect(run.outputs.find((o) => o.id === 'elbow-varus')!.value).toBeNull();
+    expect(run.outputs.find((o) => o.id === 'ball-velo')!.value).toBeNull();
+  });
+
+  it('changing stride length moves the landing foot by the same amount', () => {
+    const base = runSimulation('baseball-pitch', { ...defaultParams(MOVEMENT_BY_ID['baseball-pitch']), strideLength: 125 });
+    const long = runSimulation('baseball-pitch', { ...defaultParams(MOVEMENT_BY_ID['baseball-pitch']), strideLength: 145 });
+    const s = (r: typeof base) => r.outputs.find((o) => o.id === 'stride')!.value!;
+    expect(s(long) - s(base)).toBeCloseTo(0.2, 1);
+  });
+
+  it('left-handed variants are exact mirrors', () => {
+    const p = defaultParams(MOVEMENT_BY_ID['baseball-swing']);
+    const r = poseAt('baseball-swing', 0.6, p);
+    const l = poseAt('baseball-swing', 0.6, { ...p, handedness: 1 });
+    expect(l.points.wristL[0]).toBeCloseTo(-r.points.wristR[0], 9);
+    expect(l.points.toeR[2]).toBeCloseTo(r.points.toeL[2], 9);
+    const jr = jointAngles(r);
+    const jl = jointAngles(l);
+    expect(jl.kneeFlexR).toBeCloseTo(jr.kneeFlexL, 6);
+  });
+
+  it('carries equipment: a bat in the swing and a ball that leaves the hand at release', () => {
+    expect(poseAt('baseball-swing', 0.5, defaultParams(MOVEMENT_BY_ID['baseball-swing'])).equipment.bat).toBeTruthy();
+    const m = MOVEMENT_BY_ID['catcher-throw'];
+    const ph = phasesFor(m, defaultParams(m));
+    const rel = ph.find((x) => x.id === 'acceleration')!.end;
+    const before = poseAt('catcher-throw', rel - 0.02, defaultParams(m));
+    const after = poseAt('catcher-throw', rel + 0.03, defaultParams(m));
+    expect(dist(before.equipment.ball!, before.points.wristR)).toBeLessThan(0.1);
+    expect(after.equipment.ball![2]).toBeGreaterThan(after.points.wristR[2] + 0.3);
+  });
+
+  it('exchange time parameter changes the catcher timing output', () => {
+    const m = MOVEMENT_BY_ID['catcher-throw'];
+    const r = runSimulation('catcher-throw', { ...defaultParams(m), exchangeTime: 0.62 });
+    expect(r.outputs.find((o) => o.id === 'exchange')!.value).toBeCloseTo(0.62, 2);
+    expect(r.outputs.find((o) => o.id === 'pop-time')!.value).toBeNull();
+  });
+
+  it('the coach refuses to estimate UCL load', () => {
+    const scene = { ...createScene('baseball-pitch'), time: 0.7 };
+    const a = answerQuestion('How much torque is on the UCL?', { scene, run: runSimulation(scene.movementId, scene.params) });
+    expect(a.parts[0].kind).toBe('boundary');
   });
 });

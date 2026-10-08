@@ -32,6 +32,7 @@ function sideVisuals(S: Side): RigVisual[] {
   const shank = seg('shank', S);
   const foot = seg('foot', S);
   const ua = seg('upperArm', S);
+  const fa = seg('forearm', S);
   return [
     { meshId: `m-glute-${s}`, kind: 'muscle', depth: 'superficial', radius: 0.06,
       path: [A('pelvis', 0.7, -0.1, k * 0.05), A('pelvis', -0.2, -0.11, k * 0.1), A(thigh, 0.25, -0.04, k * 0.05)] },
@@ -51,6 +52,14 @@ function sideVisuals(S: Side): RigVisual[] {
       path: [A('pelvis', 1.4, 0.0, k * 0.03), A('pelvis', 0.1, 0.05, k * 0.06), A(thigh, 0.12, 0.02, -k * 0.02)] },
     { meshId: `m-delt-${s}`, kind: 'muscle', depth: 'superficial', radius: 0.05,
       path: [A('trunk', 0.97, 0.02, k * 0.17), A(ua, 0.35)] },
+    { meshId: `m-pec-${s}`, kind: 'muscle', depth: 'superficial', radius: 0.042,
+      path: [A('trunk', 0.8, 0.1, k * 0.03), A('trunk', 0.9, 0.085, k * 0.13), A(ua, 0.15, 0.02)] },
+    { meshId: `m-cuff-${s}`, kind: 'muscle', depth: 'deep', radius: 0.028,
+      path: [A('trunk', 0.86, -0.075, k * 0.11), A(ua, 0.06, -0.01)] },
+    { meshId: `m-flexors-${s}`, kind: 'muscle', depth: 'superficial', radius: 0.03,
+      path: [A(ua, 0.97, 0, -k * 0.03), A(fa, 0.4, 0.012, -k * 0.022), A(fa, 0.85, 0.01)] },
+    { meshId: `l-ucl-${s}`, kind: 'ligament', depth: 'deep', radius: 0.007,
+      path: [A(ua, 0.96, 0, -k * 0.03), A(fa, 0.07, 0, -k * 0.024)] },
     { meshId: `m-lat-${s}`, kind: 'muscle', depth: 'superficial', radius: 0.05,
       path: [A('pelvis', 0.9, -0.1, k * 0.05), A('trunk', 0.6, -0.08, k * 0.13), A(ua, 0.15)] },
     // bones

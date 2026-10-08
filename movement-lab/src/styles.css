@@ -309,3 +309,5 @@ details summary { cursor: pointer; min-height: 32px; display: flex; align-items:
   main { padding-bottom: 64px; }
   .transport { bottom: 60px; }
 }
+.control__row--select { grid-template-columns: 1fr; }
+.control__row--select select { min-height: 44px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); padding: 0 10px; }

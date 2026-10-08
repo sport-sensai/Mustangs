@@ -7,6 +7,7 @@ import { roleFor, searchStructures, STRUCTURE_BY_ID } from './anatomy';
 import { EVIDENCE } from './evidence';
 import { MOVEMENT_BY_ID, phaseAt, phasesFor } from './movements';
 import { lengthTrend, primaryMesh } from './rig';
+import { formatParam } from './simulation';
 import type { Lens, SceneState, SimulationRun } from './types';
 
 export type ClaimKind = 'anatomy' | 'model-estimate' | 'coaching-interpretation' | 'fascial-interpretation' | 'boundary';
@@ -34,7 +35,7 @@ export interface CoachContext { scene: SceneState; run?: SimulationRun }
 export interface CoachProvider { ask(question: string, ctx: CoachContext): Promise<CoachAnswer> }
 
 const PAIN = /\b(pain|hurt|hurts|injur|injury|injured|diagnos|tear|torn|rehab|treat|sore|strain(ed)?\b.*\b(my|his|her|their)|physio)/;
-const QUANT = /\b(how much force|force|newtons?|percent|%|activation|emg|how hard|load on|strain|torque|moment)\b/;
+const QUANT = /\b(how much force|force|newtons?|percent|%|activation|emg|how hard|load on|strain|torque|moment|stress on|velocity of the ball|how fast is the (ball|pitch)|mph)\b/;
 const FASCIA = /\b(fascia|fascial|anatomy trains|myers|line|sling|meridian)\b/;
 const CUE = /\b(cue|coach(ing)?|tell (my|the) athlete|what should i say|fix)\b/;
 const CHANGE = /\b(change|changes|different|differ|compare|variation|wider|narrower|faster|slower|deeper)\b/;
@@ -129,7 +130,7 @@ export function answerQuestion(question: string, ctx: CoachContext): CoachAnswer
     parts.push({
       kind: 'model-estimate',
       text: changed.length
-        ? `Compared with the defaults, this scene changes ${changed.map((p) => `${p.label.toLowerCase()} (${p.default} → ${scene.params[p.id]} ${p.unit}; ${p.effect.replace(/-/g, ' ')})`).join(', ')}.`
+        ? `Compared with the defaults, this scene changes ${changed.map((p) => `${p.label.toLowerCase()} (${formatParam(p, p.default)} → ${formatParam(p, scene.params[p.id])}; ${p.effect.replace(/-/g, ' ')})`).join(', ')}.`
         : 'This scene uses the default parameters. Try Compare to duplicate it and change one parameter.',
       evidenceIds: [],
     });
@@ -144,6 +145,17 @@ export function answerQuestion(question: string, ctx: CoachContext): CoachAnswer
         evidenceIds: ['ev-draft-anatomy'],
       });
       if (!changed.some((p) => p.id === 'stanceWidth')) commands.push({ type: 'propose-param', paramId: 'stanceWidth', value: 50, label: 'Try a 50 cm stance' });
+    }
+    if (m.segments) {
+      parts.push({
+        kind: 'coaching-interpretation',
+        text: 'Coaching hypothesis, not a model result: in rotational skills, coaches look at whether the pelvis turns ahead of the shoulders (separation) and whether segment speeds peak in order from hips to trunk to arm. Compare those rows in Results. The clip is hand-keyed, so differences reflect the keyframes and timing you changed, not a re-simulated athlete.',
+        evidenceIds: ['ev-draft-anatomy'],
+      });
+      const stride = m.parameters.find((p) => p.id === 'strideLength');
+      if (stride && !changed.some((p) => p.id === 'strideLength')) {
+        commands.push({ type: 'propose-param', paramId: 'strideLength', value: Math.min(stride.max, stride.default + 10), label: `Try a ${Math.min(stride.max, stride.default + 10)} cm stride` });
+      }
     }
     return { ...base, parts, commands: commands.filter((c) => validateCommand(c, scene)) };
   }

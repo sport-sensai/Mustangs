@@ -14,9 +14,18 @@ const AMBIGUOUS: { trigger: RegExp; choices: { label: string; request: string }[
     why: '"Hit" or "swing" could mean several different movements.',
     choices: [
       { label: 'Baseball swing', request: 'baseball swing' },
-      { label: 'Softball swing', request: 'softball swing' },
+      { label: 'Softball swing (approximation)', request: 'softball swing' },
       { label: 'Tennis forehand', request: 'tennis forehand' },
       { label: 'Golf swing', request: 'golf swing' },
+    ],
+  },
+  {
+    trigger: /^(show me )?(a |an |the )?(throw|throws|throwing|overhand throw)$/,
+    why: 'Throwing looks different for a pitcher, a catcher and a position player.',
+    choices: [
+      { label: 'Baseball pitch', request: 'baseball pitch' },
+      { label: 'Catcher throw to second', request: 'catcher throw to second' },
+      { label: 'Position-player throw (not yet supported)', request: 'infield throw' },
     ],
   },
   {
@@ -42,12 +51,13 @@ const AMBIGUOUS: { trigger: RegExp; choices: { label: string; request: string }[
 const APPROXIMATIONS: { aliases: string[]; movementId: string; variation: string; note: string; params?: Record<string, number> }[] = [
   { aliases: ['back squat', 'high bar squat', 'low bar squat', 'barbell back squat'], movementId: 'front-squat', variation: 'Back squat', note: 'Uses the front-squat clip. Bar position, trunk angle and hip demand differ in a real back squat.' },
   { aliases: ['goblet squat', 'kettlebell squat', 'dumbbell squat'], movementId: 'front-squat', variation: 'Goblet squat', note: 'Uses the front-squat clip with the load treated as anteriorly held. The implement is not modeled.' },
+  { aliases: ['softball swing', 'fastpitch swing', 'slowpitch swing'], movementId: 'baseball-swing', variation: 'Softball swing', note: 'Uses the baseball-swing clip. Softball pitch trajectory, bat and timing differ, so contact point and timing are not representative.' },
   { aliases: ['box squat'], movementId: 'front-squat', variation: 'Box squat', note: 'Uses the front-squat clip. Box contact is not modeled.', params: { depth: 95, pauseTime: 1 } },
 ];
 
 function parseHandedness(t: string): 'left' | 'right' | undefined {
   if (/\b(right[- ]?handed|righty|rhh|rhp)\b/.test(t)) return 'right';
-  if (/\b(left[- ]?handed|lefty|lhh|lhp)\b/.test(t)) return 'left';
+  if (/\b(left[- ]?handed|lefty|lefthander|lhh|lhp|left[- ]handed)\b/.test(t)) return 'left';
   return undefined;
 }
 
@@ -66,6 +76,18 @@ function parseVariations(movementId: string, t: string) {
     const lb = t.match(/(\d+(?:\.\d+)?)\s*(lb|lbs|pounds)\b/);
     if (kg) { p.barLoad = Number(kg[1]); labels.push(`${kg[1]} kg bar`); }
     else if (lb) { p.barLoad = Math.round((Number(lb[1]) * 0.45359237) * 10) / 10; labels.push(`${lb[1]} lb bar`); }
+  }
+  if (movementId === 'baseball-swing') {
+    if (/\bno stride\b|\btoe tap\b|\bshort stride\b/.test(t)) { p.strideLength = 12; labels.push('minimal stride'); }
+    if (/\bbig stride\b|\blong stride\b|\bleg kick\b/.test(t)) { p.strideLength = 32; labels.push('longer stride'); }
+  }
+  if (movementId === 'baseball-pitch') {
+    if (/\blong stride\b|\bbig stride\b/.test(t)) { p.strideLength = 146; labels.push('longer stride'); }
+    if (/\bshort stride\b/.test(t)) { p.strideLength = 120; labels.push('shorter stride'); }
+    if (/\bslide step\b|\bquick\b/.test(t)) { p.strideTime = 0.36; labels.push('quicker stride'); }
+  }
+  if (movementId === 'catcher-throw') {
+    if (/\bquick\b|\bfast\b|\bquicker\b/.test(t)) { p.exchangeTime = 0.62; labels.push('quick exchange'); }
   }
   if (movementId === 'sprint-acceleration') {
     if (/\bsled\b|\bresisted\b/.test(t)) { p.sledLoad = 20; labels.push('resisted (sled)'); }
@@ -108,6 +130,7 @@ export function resolveMovement(requestText: string): ResolveResult {
   if (approx) {
     const m = MOVEMENT_BY_ID[approx.movementId];
     const { p } = parseVariations(m.id, t);
+    if (handedness && m.parameters.some((d) => d.id === 'handedness')) p.handedness = handedness === 'left' ? 1 : 0;
     const params = { ...defaultParams(m), ...(approx.params ?? {}), ...p };
     return {
       route: 'approximation',
@@ -130,14 +153,20 @@ export function resolveMovement(requestText: string): ResolveResult {
 
   if (exact) {
     const { p, labels } = parseVariations(exact.id, t);
+    const sided = exact.parameters.some((d) => d.id === 'handedness');
+    if (handedness && sided) {
+      p.handedness = handedness === 'left' ? 1 : 0;
+      labels.unshift(`${handedness}-handed`);
+    }
     const params = { ...defaultParams(exact), ...p };
-    const isVariation = Object.keys(p).length > 0;
+    const isVariation = Object.keys(p).some((k) => p[k] !== defaultParams(exact)[k]);
     const assumptions = [
       `${exact.name}${labels.length ? ` — ${labels.join(', ')}` : ''}`,
       exact.equipment.length ? `Equipment: ${exact.equipment.join(', ')}` : 'No equipment',
       'Generic adult body; not athlete-specific',
     ];
-    if (handedness) assumptions.push(`Handedness noted (${handedness}); this movement is bilateral, so it does not change the clip.`);
+    if (handedness && !sided) assumptions.push(`Handedness noted (${handedness}); this movement is bilateral, so it does not change the clip.`);
+    if (sided && !handedness) assumptions.push('Right-handed by default. Say "left-handed" or change it in Adjust.');
     return {
       route: isVariation ? 'variation' : 'exact',
       spec: { ...baseSpec, movementId: exact.id, family: exact.family, equipment: exact.equipment, handedness, params, parsedParams: Object.keys(p), defaults: Object.keys(params).filter((k) => !(k in p)), variation: labels.join(', ') || undefined },

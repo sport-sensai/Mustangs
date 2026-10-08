@@ -89,7 +89,9 @@ export interface ParameterDefinition {
   id: string;
   label: string;
   kind: ParamKind;
-  unit: 'cm' | 'deg' | 's' | 'kg' | 'steps/s';
+  unit: 'cm' | 'deg' | 's' | 'kg' | 'steps/s' | 'option';
+  /** Discrete choices (e.g. handedness); value is the option's index. */
+  options?: string[];
   default: number;
   /** Reviewed validity envelope. */
   min: number;
@@ -119,6 +121,17 @@ export interface PhaseDefinition {
   coachingQuestions: string[];
 }
 
+/** A timed segment of a skill clip. Phase boundaries are derived from segment durations. */
+export interface TimingSegment {
+  phaseId: string;
+  /** Base duration, seconds. */
+  duration: number;
+  /** Parameter whose value (s) replaces the duration, or scales a group of segments. */
+  durationParam?: string;
+  /** Share of the parameter's value given to this segment when several share it. */
+  paramShare?: number;
+}
+
 export interface MovementDefinition {
   id: string;
   version: string;
@@ -133,6 +146,14 @@ export interface MovementDefinition {
   /** Base duration of one cycle at default parameters, seconds. */
   baseDuration: number;
   loop: boolean;
+  /** Skill clips derive phase timing from segments. */
+  segments?: TimingSegment[];
+  /** Default camera for this movement. */
+  camera?: { azimuth: number; elevation: number; distance: number };
+  /** Direction the athlete faces at the start (deg; 0 = +Z). Camera presets are relative to it. */
+  facingYaw?: number;
+  /** World point the camera orbits around. */
+  cameraTarget?: [number, number, number];
   review: ReviewState;
   support: SupportStatus;
   /** Controls a coach might expect but that this movement does not support yet. */

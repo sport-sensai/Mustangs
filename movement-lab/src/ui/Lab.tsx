@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CoachCommand } from '../domain/coach';
 import { cycleDuration, defaultParams, MOVEMENT_BY_ID, phaseAt, phasesFor } from '../domain/movements';
 import { createScene, withParams, type MassUnit } from '../domain/scene';
-import { changedParams, runSimulation, sceneSupport, supportBadge } from '../domain/simulation';
+import { changedParams, formatParam, runSimulation, sceneSupport, supportBadge } from '../domain/simulation';
 import { saveScene } from '../domain/storage';
 import type { LayerId, SceneState, SupportStatus } from '../domain/types';
 import { Clock } from '../viewer/clock';
@@ -176,7 +176,7 @@ export function Lab({ initial, unit, savedId, savedName, onBack }: Props) {
           <div className="compare-bar">
             <div>
               <strong>Compare:</strong>{' '}
-              {diffs.length ? diffs.map(({ p, a, b }) => `${p.label} ${a} → ${b} ${p.unit}`).join(' · ') : 'No differences yet. Change a parameter in Adjust to create the variation.'}
+              {diffs.length ? diffs.map(({ p, a, b }) => `${p.label} ${formatParam(p, a)} → ${formatParam(p, b)}`).join(' · ') : 'No differences yet. Change a parameter in Adjust to create the variation.'}
             </div>
             <div className="row">
               <button className="btn btn--ghost" onClick={() => setBaseline(createScene(scene.movementId, defaultParams(m)))}>Reset baseline</button>
@@ -198,7 +198,7 @@ export function Lab({ initial, unit, savedId, savedName, onBack }: Props) {
           {(!comparing || !phone || abSide === 'B') && viewerB}
           <div className="view-buttons" role="group" aria-label="Camera views">
             {VIEWS.map((v) => (
-              <button key={v.label} onClick={() => setScene((s) => ({ ...s, camera: { ...s.camera, azimuth: v.azimuth, elevation: v.elevation } }))}>{v.label}</button>
+              <button key={v.label} onClick={() => setScene((s) => ({ ...s, camera: { ...s.camera, azimuth: v.azimuth + (m.facingYaw ?? 0) * (s.params.handedness === 1 ? -1 : 1), elevation: v.elevation } }))}>{v.label}</button>
             ))}
             <button onClick={() => setScene((s) => ({ ...s, camera: createScene(s.movementId).camera }))}>Reset</button>
           </div>

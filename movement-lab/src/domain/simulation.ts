@@ -37,6 +37,12 @@ export function checkAll(movement: MovementDefinition, params: Record<string, nu
   };
 }
 
+/** Human-readable parameter value with unit (option labels for choices). */
+export function formatParam(def: ParameterDefinition, value: number): string {
+  if (def.options) return def.options[value] ?? String(value);
+  return `${value} ${def.unit}`;
+}
+
 // --------------------------------------------------------------- revision
 /** Deterministic scene revision id: changes whenever any result-affecting input changes. */
 export function sceneRevision(movementId: string, version: string, assetVersion: string, params: Record<string, number>, experimental: boolean): string {
@@ -97,6 +103,109 @@ const UNAVAILABLE_MECHANICS = (extra: string) => [
   unavailable('ligament-strain', 'Ligament strain / tension', 'Ligaments are not represented in a mechanical model (ANAT-04).', '%'),
 ];
 
+type Sample = { t: number; sk: ReturnType<typeof poseAt>; ja: ReturnType<typeof jointAngles> };
+
+/** Unwrapped angular rate (deg/s) of a heading series. */
+function headingRates(samples: Sample[], f: (s: Sample) => number, dt: number) {
+  return samples.slice(1).map((s, i) => {
+    let d = f(s) - f(samples[i]);
+    while (d > 180) d -= 360;
+    while (d < -180) d += 360;
+    return { t: s.t, rate: Math.abs(d) / dt };
+  });
+}
+
+function skillOutputs(m: MovementDefinition, params: Record<string, number>, samples: Sample[], dur: number): OutputValue[] {
+  const N = samples.length - 1;
+  const dt = dur / N;
+  const phases = phasesFor(m, params);
+  const ph = (id: string) => phases.find((p) => p.id === id)!;
+  const at = (t: number) => samples[Math.min(N, Math.max(0, Math.round(t * N)))];
+  const lefty = params.handedness === 1;
+  const lead = lefty ? 'R' : 'L'; // stride / front leg
+  const arm = lefty ? 'L' : 'R'; // throwing arm (or top hand)
+  const knee = (s: Sample, side: string) => (side === 'L' ? s.ja.kneeFlexL : s.ja.kneeFlexR);
+
+  const pelvis = headingRates(samples, (s) => s.ja.pelvisHeading, dt);
+  const trunk = headingRates(samples, (s) => s.ja.trunkHeading, dt);
+  const peak = (xs: { t: number; rate: number }[]) => xs.reduce((a, b) => (b.rate > a.rate ? b : a));
+  const pp = peak(pelvis);
+  const tp = peak(trunk);
+  const sepMax = Math.max(...samples.map((s) => s.ja.separation));
+  const speed = (point: (s: Sample) => [number, number, number], t: number) => {
+    const a = at(t - 1 / N).sk;
+    const b = at(t + 1 / N).sk;
+    const pa = point({ sk: a } as Sample);
+    const pb = point({ sk: b } as Sample);
+    return Math.hypot(pb[0] - pa[0], pb[1] - pa[1], pb[2] - pa[2]) / (2 * dt);
+  };
+  const wrist = (s: Sample) => s.sk.points[`wrist${arm}` as 'wristR'];
+  const toe = (s: Sample) => s.sk.points[`toe${lead}` as 'toeL'];
+  const strideLen = (t0: number, t1: number) => {
+    const a = toe(at(t0));
+    const b = toe(at(t1));
+    return Math.hypot(b[0] - a[0], b[2] - a[2]);
+  };
+
+  const out: OutputValue[] = [
+    kin('pelvis-rot-vel', 'Peak pelvis rotation velocity', pp.rate, '°/s'),
+    kin('trunk-rot-vel', 'Peak trunk (shoulder-line) rotation velocity', tp.rate, '°/s'),
+    kin('sequence', 'Pelvis peak precedes trunk peak by', (tp.t - pp.t) * dur * 1000, 'ms'),
+    kin('separation', 'Max hip–shoulder separation', sepMax, '°'),
+  ];
+
+  if (m.id === 'baseball-swing') {
+    const c = ph('contact');
+    const tc = (c.start + c.end) / 2;
+    const sweet = (s: Sample): [number, number, number] => {
+      const b = s.sk.equipment.bat!;
+      return [b.knob[0] + (b.tip[0] - b.knob[0]) * 0.82, b.knob[1] + (b.tip[1] - b.knob[1]) * 0.82, b.knob[2] + (b.tip[2] - b.knob[2]) * 0.82];
+    };
+    out.push(
+      kin('stride', 'Stride length (front-foot travel)', strideLen(0, ph('stride').end), 'm'),
+      kin('lead-knee-contact', 'Front knee flexion at contact', knee(at(tc), lead), '°'),
+      kin('bat-speed', 'Bat sweet-spot speed at contact (keyed)', speed(sweet, tc), 'm/s'),
+      kin('launch-time', 'Launch-to-contact time', (tc - ph('launch').start) * dur, 's'),
+      unavailable('exit-velo', 'Exit velocity / launch angle', 'Bat–ball collision is not simulated.', 'm/s'),
+      unavailable('grf', 'Ground reaction forces', 'Needs force plates under each foot.', 'N'),
+      ...UNAVAILABLE_MECHANICS('Bat mass is recorded but the clip is not re-solved for bat inertia.'),
+    );
+  } else if (m.id === 'baseball-pitch') {
+    const fc = ph('stride').end;
+    const rel = ph('acceleration').end;
+    // Rubber (back toe at the set) to front toe at foot contact, horizontal.
+    const back = at(0).sk.points[`toe${lefty ? 'L' : 'R'}` as 'toeR'];
+    const front = toe(at(fc));
+    out.push(
+      kin('stride', 'Stride length (rubber toe to front toe)', Math.hypot(front[0] - back[0], front[2] - back[2]), 'm'),
+      kin('stride-pct', 'Stride as % of generic body height (178 cm)', (((params.strideLength ?? 135) / 100) / 1.78) * 100, '%'),
+      kin('sep-fc', 'Hip–shoulder separation at foot contact', at(fc).ja.separation, '°'),
+      kin('lead-knee-fc', 'Lead knee flexion at foot contact', knee(at(fc), lead), '°'),
+      kin('lead-knee-rel', 'Lead knee flexion at release', knee(at(rel), lead), '°'),
+      kin('shoulder-rel', 'Throwing-arm elevation at release', arm === 'R' ? at(rel).ja.shoulderElevR : at(rel).ja.shoulderElevL, '°'),
+      kin('hand-speed', 'Throwing-hand speed near release (keyed)', speed(wrist, rel - 1 / N), 'm/s'),
+      kin('fc-to-release', 'Foot contact to release time', (rel - fc) * dur, 's'),
+      unavailable('ball-velo', 'Ball release speed', 'Ball and fingers are not modeled; hand speed is not ball speed.', 'm/s'),
+      unavailable('elbow-varus', 'Elbow varus torque (UCL load)', 'Needs inverse dynamics with measured arm kinematics and segment inertias.', 'N·m'),
+      unavailable('shoulder-distraction', 'Shoulder distraction force', 'Needs inverse dynamics; not available from a keyed clip.', 'N'),
+      ...UNAVAILABLE_MECHANICS('UCL and rotator-cuff loads in particular cannot be read from animation.'),
+    );
+  } else {
+    const catchT = ph('receive').end;
+    const rel = ph('acceleration').end;
+    out.push(
+      kin('exchange', 'Exchange time (catch to release)', (rel - catchT) * dur, 's'),
+      kin('stride', 'Glove-side step length', strideLen(catchT, ph('stride').end), 'm'),
+      kin('lead-knee-rel', 'Lead knee flexion at release', knee(at(rel), lead), '°'),
+      kin('hand-speed', 'Throwing-hand speed near release (keyed)', speed(wrist, rel - 1 / N), 'm/s'),
+      unavailable('pop-time', 'Pop time (catch to tag at second)', 'Ball flight to second base is not modeled.', 's'),
+      unavailable('elbow-varus', 'Elbow varus torque (UCL load)', 'Needs inverse dynamics with measured arm kinematics.', 'N·m'),
+      ...UNAVAILABLE_MECHANICS('Throwing-arm tissue loads cannot be read from animation.'),
+    );
+  }
+  return out;
+}
+
 export function runSimulation(movementId: string, params: Record<string, number>, experimental = false): SimulationRun {
   const m = MOVEMENT_BY_ID[movementId];
   const dur = cycleDuration(m, params);
@@ -145,6 +254,9 @@ export function runSimulation(movementId: string, params: Record<string, number>
       kin('knee-vel-ascent', 'Peak knee angular velocity, ascent', peakRate((s) => s.ja.kneeFlexR, ascent.start, ascent.end), '°/s'),
       ...UNAVAILABLE_MECHANICS('Bar load is recorded but no qualified model links it to tissue loading.'),
     );
+  } else if (m.segments) {
+    outputs.push(...skillOutputs(m, params, samples, dur));
+    limitations.push('Skill clips are hand-keyed from coaching descriptions. Speeds and timings come from those keys, so they show sequencing patterns, not a real athlete\'s speeds.');
   } else {
     outputs.push(
       kin('peak-hip-flex', 'Peak hip flexion (swing)', max((s) => s.ja.hipFlexR), '°'),

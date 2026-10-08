@@ -57,30 +57,43 @@ export function ControlsPanel({ scene, unit, onApply, onReset, onCompare }: Prop
               <label htmlFor={`p-${d.id}`}>{d.label}</label>
               <span className={`tag tag--${d.effect}`}>{EFFECT_LABEL[d.effect]}</span>
             </div>
-            <div className="control__row">
-              <input
-                type="range"
-                min={shown(d, lo)}
-                max={shown(d, hi)}
-                step={d.step}
-                value={Number.isFinite(v) ? shown(d, Math.min(hi, Math.max(lo, v))) : shown(d, d.default)}
-                onChange={(e) => setDraft((x) => ({ ...x, [d.id]: e.target.value }))}
-                aria-label={`${d.label} slider`}
-              />
-              <input
-                id={`p-${d.id}`}
-                className="num"
-                type="number"
-                inputMode="decimal"
-                step={d.step}
-                value={draft[d.id] ?? String(shown(d, scene.params[d.id]))}
-                onChange={(e) => setDraft((x) => ({ ...x, [d.id]: e.target.value }))}
-                aria-describedby={`p-${d.id}-note`}
-              />
-              <span className="unit">{unitOf(d)}</span>
-            </div>
+            {d.options ? (
+              <div className="control__row control__row--select">
+                <select
+                  id={`p-${d.id}`}
+                  value={String(v)}
+                  onChange={(e) => setDraft((x) => ({ ...x, [d.id]: e.target.value }))}
+                  aria-describedby={`p-${d.id}-note`}
+                >
+                  {d.options.map((o, i) => <option key={o} value={i}>{o}</option>)}
+                </select>
+              </div>
+            ) : (
+              <div className="control__row">
+                <input
+                  type="range"
+                  min={shown(d, lo)}
+                  max={shown(d, hi)}
+                  step={d.step}
+                  value={Number.isFinite(v) ? shown(d, Math.min(hi, Math.max(lo, v))) : shown(d, d.default)}
+                  onChange={(e) => setDraft((x) => ({ ...x, [d.id]: e.target.value }))}
+                  aria-label={`${d.label} slider`}
+                />
+                <input
+                  id={`p-${d.id}`}
+                  className="num"
+                  type="number"
+                  inputMode="decimal"
+                  step={d.step}
+                  value={draft[d.id] ?? String(shown(d, scene.params[d.id]))}
+                  onChange={(e) => setDraft((x) => ({ ...x, [d.id]: e.target.value }))}
+                  aria-describedby={`p-${d.id}-note`}
+                />
+                <span className="unit">{unitOf(d)}</span>
+              </div>
+            )}
             <p id={`p-${d.id}-note`} className="small muted">
-              Reference range {shown(d, d.min)}–{shown(d, d.max)} {unitOf(d)}. {d.effectNote}
+              {d.options ? '' : `Reference range ${shown(d, d.min)}–${shown(d, d.max)} ${unitOf(d)}. `}{d.effectNote}
             </p>
             {c.level !== 'ok' && <p className={`small ${c.level === 'rejected' ? 'error' : 'warn'}`} role="alert">{c.message}</p>}
           </div>

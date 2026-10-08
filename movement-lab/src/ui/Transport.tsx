@@ -21,7 +21,13 @@ export function Transport({ clock, phases, duration, onRate }: Props) {
   };
   return (
     <div className="transport" role="group" aria-label="Playback">
-      <button className="play" onClick={() => clock.setPlaying(!clock.playing)} aria-label={clock.playing ? 'Pause' : 'Play'}>
+      <button
+        className="play"
+        onClick={() => {
+          // Non-looping clips (skills) restart from the beginning once finished.
+          if (!clock.playing && !clock.loop && clock.time >= 0.999) clock.set(0);
+          clock.setPlaying(!clock.playing);
+        }} aria-label={clock.playing ? 'Pause' : 'Play'}>
         {clock.playing ? '❚❚' : '▶'}
       </button>
       <button className="icon-btn" onClick={() => step(-0.01)} aria-label="Step back one frame">‹</button>

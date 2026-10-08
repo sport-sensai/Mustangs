@@ -3,6 +3,7 @@
 // This is a procedurally keyed educational rig, not a musculoskeletal solver.
 
 import { MOVEMENT_BY_ID, squatTiming } from './movements';
+import { poseSkill } from './skills';
 
 export type V3 = [number, number, number];
 const add = (a: V3, b: V3): V3 => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
@@ -14,10 +15,10 @@ export const len = (a: V3) => Math.hypot(a[0], a[1], a[2]);
 export const norm = (a: V3): V3 => mul(a, 1 / (len(a) || 1));
 export const dist = (a: V3, b: V3) => len(sub(a, b));
 export const vec = { add, sub, mul, dot, cross };
-const rad = (d: number) => (d * Math.PI) / 180;
-const deg = (r: number) => (r * 180) / Math.PI;
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-const ease = (t: number) => 0.5 - 0.5 * Math.cos(Math.PI * Math.min(1, Math.max(0, t)));
+export const rad = (d: number) => (d * Math.PI) / 180;
+export const deg = (r: number) => (r * 180) / Math.PI;
+export const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+export const ease = (t: number) => 0.5 - 0.5 * Math.cos(Math.PI * Math.min(1, Math.max(0, t)));
 
 /** Generic adult body segment lengths (m). Not athlete-specific. */
 export const BODY = {
@@ -47,9 +48,13 @@ export type PointId =
 export interface Skeleton {
   points: Record<PointId, V3>;
   /** Forward reference vectors used to build segment frames. */
-  forward: { trunk: V3; legL: V3; legR: V3 };
+  forward: { trunk: V3; pelvis: V3; legL: V3; legR: V3 };
   contacts: { footL: boolean; footR: boolean };
-  equipment: { bar?: { center: V3; halfLength: number } };
+  equipment: {
+    bar?: { center: V3; halfLength: number };
+    bat?: { knob: V3; tip: V3 };
+    ball?: V3;
+  };
 }
 
 export interface JointAngles {
@@ -57,11 +62,18 @@ export interface JointAngles {
   kneeFlexL: number; kneeFlexR: number;
   ankleDorsiL: number; ankleDorsiR: number;
   trunkLean: number;
+  elbowFlexL: number; elbowFlexR: number;
+  /** Angle between upper arm and the trunk's downward axis (0° = arm at side). */
+  shoulderElevL: number; shoulderElevR: number;
+  /** Horizontal-plane rotation of the shoulder line relative to the hip line (+ = shoulders closed/behind). */
+  separation: number;
+  /** Headings of the pelvis and shoulder lines in the horizontal plane (deg). */
+  pelvisHeading: number; trunkHeading: number;
 }
 
 // ---------------------------------------------------------------- helpers
 /** Two-bone IK: knee position given hip, ankle and a pole direction. */
-function solveKnee(hip: V3, ankle: V3, l1: number, l2: number, pole: V3): V3 {
+export function solveKnee(hip: V3, ankle: V3, l1: number, l2: number, pole: V3): V3 {
   const d = sub(ankle, hip);
   const D = Math.min(len(d), l1 + l2 - 1e-6);
   const axis = norm(d);
@@ -71,7 +83,7 @@ function solveKnee(hip: V3, ankle: V3, l1: number, l2: number, pole: V3): V3 {
   return add(add(hip, mul(axis, a)), mul(poleOrtho, h));
 }
 
-function rotY(v: V3, angleDeg: number): V3 {
+export function rotY(v: V3, angleDeg: number): V3 {
   const c = Math.cos(rad(angleDeg));
   const s = Math.sin(rad(angleDeg));
   return [v[0] * c + v[2] * s, v[1], -v[0] * s + v[2] * c];
@@ -147,7 +159,7 @@ function frontSquat(t: number, params: Record<string, number>): Skeleton {
       shoulderL: up.shoulderL, elbowL: aL.elbow, wristL: aL.wrist,
       shoulderR: up.shoulderR, elbowR: aR.elbow, wristR: aR.wrist,
     },
-    forward: { trunk: fwd, legL: dirL, legR: dirR },
+    forward: { trunk: fwd, pelvis: fwd, legL: dirL, legR: dirR },
     contacts: { footL: true, footR: true },
     equipment: { bar: { center: barCenter, halfLength: 1.1 } },
   };
@@ -241,7 +253,7 @@ function sprintAcceleration(t: number, params: Record<string, number>): Skeleton
       shoulderL: up.shoulderL, elbowL: aL.elbow, wristL: aL.wrist,
       shoulderR: up.shoulderR, elbowR: aR.elbow, wristR: aR.wrist,
     },
-    forward: { trunk: fwd, legL: [0, 0, 1], legR: [0, 0, 1] },
+    forward: { trunk: fwd, pelvis: fwd, legL: [0, 0, 1], legR: [0, 0, 1] },
     contacts,
     equipment: {},
   };
@@ -249,9 +261,35 @@ function sprintAcceleration(t: number, params: Record<string, number>): Skeleton
 
 // ---------------------------------------------------------------- public
 export function poseAt(movementId: string, t: number, params: Record<string, number>): Skeleton {
-  if (!MOVEMENT_BY_ID[movementId]) throw new Error(`Unknown movement ${movementId}`);
-  if (movementId === 'front-squat') return frontSquat(((t % 1) + 1) % 1, params);
-  return sprintAcceleration(t, params);
+  const m = MOVEMENT_BY_ID[movementId];
+  if (!m) throw new Error(`Unknown movement ${movementId}`);
+  let sk: Skeleton;
+  if (movementId === 'front-squat') sk = frontSquat(((t % 1) + 1) % 1, params);
+  else if (movementId === 'sprint-acceleration') sk = sprintAcceleration(t, params);
+  else sk = poseSkill(m, Math.min(1, Math.max(0, t)), params);
+  return params.handedness === 1 ? mirror(sk) : sk;
+}
+
+/** Left-right mirror (for left-handed variants). Labels stay anatomical: the left leg is still the left leg. */
+export function mirror(sk: Skeleton): Skeleton {
+  const M = (v: V3): V3 => [-v[0], v[1], v[2]];
+  const P = sk.points;
+  const swap: Record<string, PointId> = {};
+  (Object.keys(P) as PointId[]).forEach((k) => {
+    swap[k] = (k.endsWith('L') ? k.slice(0, -1) + 'R' : k.endsWith('R') ? k.slice(0, -1) + 'L' : k) as PointId;
+  });
+  const points = Object.fromEntries((Object.keys(P) as PointId[]).map((k) => [k, M(P[swap[k]])])) as Record<PointId, V3>;
+  const e = sk.equipment;
+  return {
+    points,
+    forward: { trunk: M(sk.forward.trunk), pelvis: M(sk.forward.pelvis), legL: M(sk.forward.legR), legR: M(sk.forward.legL) },
+    contacts: { footL: sk.contacts.footR, footR: sk.contacts.footL },
+    equipment: {
+      bar: e.bar && { ...e.bar, center: M(e.bar.center) },
+      bat: e.bat && { knob: M(e.bat.knob), tip: M(e.bat.tip) },
+      ball: e.ball && M(e.ball),
+    },
+  };
 }
 
 function angleBetween(a: V3, b: V3) {
@@ -262,7 +300,7 @@ function angleBetween(a: V3, b: V3) {
 export function jointAngles(sk: Skeleton): JointAngles {
   const P = sk.points;
   const trunk = sub(P.neck, P.hipC);
-  const lateral: V3 = [1, 0, 0];
+  const lateral = norm(sub(P.hipL, P.hipR)); // body-left
   const hip = (h: V3, k: V3) => {
     const thigh = sub(k, h);
     const a = 180 - angleBetween(trunk, thigh);
@@ -272,6 +310,14 @@ export function jointAngles(sk: Skeleton): JointAngles {
   };
   const knee = (h: V3, k: V3, a: V3) => 180 - angleBetween(sub(h, k), sub(a, k));
   const ankle = (k: V3, a: V3, toe: V3, heel: V3) => 90 - angleBetween(sub(k, a), sub(toe, heel));
+  const heading = (l: V3) => deg(Math.atan2(l[0], l[2])) - 90; // heading of the facing direction
+  const flat = (v: V3): V3 => [v[0], 0, v[2]];
+  const hipLine = flat(sub(P.hipL, P.hipR));
+  const shLine = flat(sub(P.shoulderL, P.shoulderR));
+  const signedYaw = (a: V3, b: V3) => {
+    const c = cross(norm(a), norm(b))[1];
+    return deg(Math.atan2(c, dot(norm(a), norm(b))));
+  };
   return {
     hipFlexL: hip(P.hipL, P.kneeL),
     hipFlexR: hip(P.hipR, P.kneeR),
@@ -280,6 +326,14 @@ export function jointAngles(sk: Skeleton): JointAngles {
     ankleDorsiL: ankle(P.kneeL, P.ankleL, P.toeL, P.heelL),
     ankleDorsiR: ankle(P.kneeR, P.ankleR, P.toeR, P.heelR),
     trunkLean: angleBetween(trunk, [0, 1, 0]),
+    elbowFlexL: 180 - angleBetween(sub(P.shoulderL, P.elbowL), sub(P.wristL, P.elbowL)),
+    elbowFlexR: 180 - angleBetween(sub(P.shoulderR, P.elbowR), sub(P.wristR, P.elbowR)),
+    shoulderElevL: angleBetween(sub(P.elbowL, P.shoulderL), mul(trunk, -1)),
+    shoulderElevR: angleBetween(sub(P.elbowR, P.shoulderR), mul(trunk, -1)),
+    // Positive when the shoulder line lags the hip line in the direction the hips are turning.
+    separation: Math.abs(signedYaw(hipLine, shLine)),
+    pelvisHeading: heading(hipLine),
+    trunkHeading: heading(shLine),
   };
 }
 
@@ -289,8 +343,8 @@ export type SegmentId =
   | 'thighL' | 'shankL' | 'footL' | 'thighR' | 'shankR' | 'footR'
   | 'upperArmL' | 'forearmL' | 'upperArmR' | 'forearmR';
 
-export const SEGMENTS: Record<SegmentId, { from: PointId; to: PointId; fwd: 'trunk' | 'legL' | 'legR' }> = {
-  pelvis: { from: 'hipC', to: 'lumbar', fwd: 'trunk' },
+export const SEGMENTS: Record<SegmentId, { from: PointId; to: PointId; fwd: 'trunk' | 'pelvis' | 'legL' | 'legR' }> = {
+  pelvis: { from: 'hipC', to: 'lumbar', fwd: 'pelvis' },
   trunk: { from: 'hipC', to: 'neck', fwd: 'trunk' },
   head: { from: 'neck', to: 'head', fwd: 'trunk' },
   thighL: { from: 'hipL', to: 'kneeL', fwd: 'legL' },

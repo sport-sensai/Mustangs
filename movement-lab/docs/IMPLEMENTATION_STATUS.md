@@ -1,6 +1,6 @@
 # Implementation status: Stage 1/2 prototype
 
-This prototype targets PRD **Stage 1 (feasibility)** and the **Stage 2 vertical slice**. It covers the front squat and sprint acceleration, from request through save and restore. It is a feasibility build, not Release A. **No content or motion has passed expert review**, and the app says so everywhere.
+This prototype targets PRD **Stage 1 (feasibility)** and the **Stage 2 vertical slice**. It covers the front squat and sprint acceleration, from request through save and restore. It also covers three baseball skills from the PRD §7 list: **baseball swing**, **baseball pitch** and **catcher throw to second**. It is a feasibility build, not Release A. **No content or motion has passed expert review**, and the app says so everywhere.
 
 Legend: ✅ implemented · ◐ partial / placeholder · ⛔ not started (by design or blocked on a decision)
 
@@ -9,9 +9,9 @@ Legend: ✅ implemented · ◐ partial / placeholder · ⛔ not started (by desi
 | Area | Prototype reality | What Release A still needs |
 |---|---|---|
 | Body | Stylised procedural rig (tubes and spheres), generic adult proportions | Licensed anatomical body with separable meshes (PRD §16) |
-| Motion | Two procedurally keyed clips. The squat uses fixed-foot two-bone IK; the sprint uses keyed FK, shown in place on a treadmill | Captured or reviewed reference clips, plus retargeting |
-| Anatomy | 26 structures across all five layers; muscles drawn as polylines through simplified attachment and via points | Reviewed mesh mapping at the asset's resolution |
-| Mechanics | Kinematics only: joint angles, angular velocity, bar travel and speed, contact time. Forces, moments, activation and strain are **Unavailable** with a reason | A qualified solver (e.g. an OpenSim-style ID pipeline) per output, with tolerances |
+| Motion | Five procedurally keyed clips. The squat uses fixed-foot two-bone IK; the sprint uses keyed FK on a treadmill; the swing, pitch and catcher throw use Hermite-interpolated keys (pelvis/trunk heading, lean, tilt, foot placements, hand targets) with leg and arm IK. Left-handed variants are exact mirrors | Captured or reviewed reference clips, plus retargeting |
+| Anatomy | 31 structures across all five layers (including rotator cuff, pec major, flexor–pronator group, UCL and elbow joint); muscles drawn as polylines through simplified attachment and via points | Reviewed mesh mapping at the asset's resolution |
+| Mechanics | Kinematics only: joint angles, angular velocity, bar travel and speed, contact time; for the skills, pelvis/trunk rotation velocity, pelvis-before-trunk sequencing, hip–shoulder separation, stride, lead-knee angles, keyed bat and hand speed, exchange time. Skill speeds come straight from hand-authored keys, so they illustrate patterns only. Ball speed, pop time, exit velocity and elbow varus torque (UCL load) are **Unavailable**. Forces, moments, activation and strain are **Unavailable** with a reason | A qualified solver (e.g. an OpenSim-style ID pipeline) per output, with tolerances |
 | Coach | Deterministic, retrieval-only coach over the scene's cards and results, with structured commands | LLM provider behind the same `CoachProvider` contract, server-side |
 | Content | Draft, unsourced educational text. Only the PRD §21 sources are cited | Source mapping plus anatomy, coaching and biomechanics review |
 | Persistence | Local-first (`localStorage`), with try/catch on every access | Decision on account vs. local-first (PRD §20.4) |
@@ -58,7 +58,7 @@ Legend: ✅ implemented · ◐ partial / placeholder · ⛔ not started (by desi
 
 ## Acceptance scenarios
 
-Automated in `src/domain/__tests__/acceptance.test.ts` (32 tests): AC-01, 04, 05, 06, 08, 09, 10, 12, 14, 15, plus routing, kinematic-constraint, and content-integrity checks. These were checked by hand in Chromium at 1440×900 and 390×844: AC-02, 03, 07, 11 (`?coach=offline`), 13 (no horizontal overflow at 390 px), and 16.
+Automated in `src/domain/__tests__/acceptance.test.ts` (41 tests, including skill routing, phase tiling, constant segment lengths, planted-foot stability, L/R mirroring, ball release and UCL-load refusal): AC-01, 04, 05, 06, 08, 09, 10, 12, 14, 15, plus routing, kinematic-constraint, and content-integrity checks. These were checked by hand in Chromium at 1440×900 and 390×844: AC-02, 03, 07, 11 (`?coach=offline`), 13 (no horizontal overflow at 390 px), and 16.
 
 ## Known gaps / next steps
 

@@ -130,7 +130,7 @@ export function Viewer(props: ViewerProps) {
     scene3.add(rim);
 
     // Ground + treadmill stripes (sprint is shown in place).
-    const ground = new THREE.Mesh(new THREE.CircleGeometry(2.2, 48), new THREE.MeshStandardMaterial({ color: cssVar('--ground', '#e8e3da'), roughness: 1 }));
+    const ground = new THREE.Mesh(new THREE.CircleGeometry(3, 56), new THREE.MeshStandardMaterial({ color: cssVar('--ground', '#e8e3da'), roughness: 1 }));
     ground.rotation.x = -Math.PI / 2;
     scene3.add(ground);
     const stripes = new THREE.Group();
@@ -172,6 +172,7 @@ export function Viewer(props: ViewerProps) {
     const jointPts: [string, keyof Skeleton['points']][] = [
       ['j-hip-l', 'hipL'], ['j-hip-r', 'hipR'], ['j-knee-l', 'kneeL'], ['j-knee-r', 'kneeR'],
       ['j-ankle-l', 'ankleL'], ['j-ankle-r', 'ankleR'], ['j-shoulder-l', 'shoulderL'], ['j-shoulder-r', 'shoulderR'],
+      ['j-elbow-l', 'elbowL'], ['j-elbow-r', 'elbowR'],
     ];
     const joints = jointPts.map(([id, p]) => {
       const m = new THREE.Mesh(new THREE.SphereGeometry(0.03, 16, 12), jointMat.clone());
@@ -194,6 +195,12 @@ export function Viewer(props: ViewerProps) {
       bar.add(plate);
     }
     scene3.add(bar);
+
+    // Equipment: bat and ball.
+    const bat = new THREE.Mesh(new THREE.CylinderGeometry(0.033, 0.013, 1, 16), new THREE.MeshStandardMaterial({ color: '#b98b55', roughness: 0.5 }));
+    scene3.add(bat);
+    const ball = new THREE.Mesh(new THREE.SphereGeometry(0.037, 18, 14), new THREE.MeshStandardMaterial({ color: '#f7f4ec', roughness: 0.6 }));
+    scene3.add(ball);
 
     // Foot contact markers.
     const contactMat = new THREE.MeshBasicMaterial({ color: '#1f7a78', transparent: true, opacity: 0.55 });
@@ -308,7 +315,11 @@ export function Viewer(props: ViewerProps) {
       const s = p.scene;
       const m = MOVEMENT_BY_ID[s.movementId];
       const clock = p.clock;
+      const tg = m.cameraTarget ?? [0, 0.72, 0];
+      target.set(tg[0], tg[1], tg[2]);
+      ground.position.set(tg[0], 0, tg[2]);
       if (p.master !== false) {
+        clock.loop = m.loop;
         clock.duration = cycleDuration(m, s.params);
         clock.advance(dt);
       }
@@ -384,6 +395,10 @@ export function Viewer(props: ViewerProps) {
 
       bar.visible = !!sk.equipment.bar && !isolating;
       if (sk.equipment.bar) bar.position.copy(v3(sk.equipment.bar.center));
+      bat.visible = !!sk.equipment.bat && !isolating;
+      if (sk.equipment.bat) placeCapsule(bat, v3(sk.equipment.bat.knob), v3(sk.equipment.bat.tip));
+      ball.visible = !!sk.equipment.ball;
+      if (sk.equipment.ball) ball.position.copy(v3(sk.equipment.ball));
 
       contacts[0].visible = sk.contacts.footL;
       contacts[1].visible = sk.contacts.footR;

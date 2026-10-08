@@ -1,3 +1,4 @@
+import { SKILL_ROLES, SKILL_STRUCTURES } from './skillAnatomy';
 import type { AnatomicalStructure, JointDefinition, LayerId } from './types';
 
 // Draft structure catalogue for the prototype rig. Every entry is `review: 'draft'`:
@@ -544,6 +545,13 @@ export const STRUCTURES: AnatomicalStructure[] = [
     review: 'draft',
   },
 ];
+
+STRUCTURES.push(...SKILL_STRUCTURES);
+// Merge baseball-skill roles into the shared catalogue.
+for (const s of STRUCTURES) {
+  const extra = SKILL_ROLES[s.id];
+  if (extra) s.roles = { ...s.roles, ...extra };
+}
 
 export const STRUCTURE_BY_ID: Record<string, AnatomicalStructure> = Object.fromEntries(
   STRUCTURES.map((s) => [s.id, s]),

@@ -1,3 +1,4 @@
+import { SKILL_MOVEMENTS } from './skillMovements';
 import type { MovementDefinition, ParameterDefinition, PhaseDefinition, PlannedMovement, SupportStatus } from './types';
 
 // Stage 1 feasibility pair (PRD §7): front squat + sprint acceleration.
@@ -190,6 +191,7 @@ export const MOVEMENTS: MovementDefinition[] = [
       { label: 'Upright (max-velocity) sprinting', reason: 'A distinct motion context that needs its own reference clip.' },
     ],
   },
+  ...SKILL_MOVEMENTS,
 ];
 
 export const MOVEMENT_BY_ID: Record<string, MovementDefinition> = Object.fromEntries(MOVEMENTS.map((m) => [m.id, m]));
@@ -205,15 +207,18 @@ export const PLANNED: PlannedMovement[] = [
   { name: 'Inverted row', aliases: ['inverted row', 'ring row', 'row'], family: 'Upper-body pull', relatedSupportedId: 'front-squat', missingCapability: 'upper-body pulling clip' },
   { name: 'Pull-up', aliases: ['pull up', 'pull-up', 'pullup', 'chin up', 'chin-up'], family: 'Upper-body pull', relatedSupportedId: 'front-squat', missingCapability: 'hanging grip contact and upper-body rigging' },
   { name: 'Medicine-ball rotational throw', aliases: ['med ball throw', 'medicine ball throw', 'rotational throw', 'scoop toss', 'med-ball rotational throw'], family: 'Rotation', relatedSupportedId: 'sprint-acceleration', missingCapability: 'implement release and trunk rotation' },
-  { name: 'Baseball/softball swing', aliases: ['baseball swing', 'softball swing', 'swing', 'batting', 'bat swing'], family: 'Sport skill', relatedSupportedId: 'sprint-acceleration', missingCapability: 'upper-body rigging, bat interaction, and handedness-specific clip' },
-  { name: 'Overhand throw', aliases: ['overhand throw', 'throw', 'throwing', 'football throw'], family: 'Throwing', relatedSupportedId: 'sprint-acceleration', missingCapability: 'upper-body rigging and ball release' },
-  { name: 'Baseball pitch', aliases: ['pitch', 'pitching', 'baseball pitch', 'fastball'], family: 'Throwing', relatedSupportedId: 'sprint-acceleration', missingCapability: 'mound contact, upper-body rigging, and ball release' },
+  { name: 'Position-player overhand throw', aliases: ['overhand throw', 'infield throw', 'outfield throw', 'crow hop', 'football throw'], family: 'Throwing', relatedSupportedId: 'catcher-throw', missingCapability: 'a crow-hop / fielding-footwork clip' },
+  { name: 'Softball windmill pitch', aliases: ['windmill', 'softball pitch', 'windmill pitch', 'fastpitch'], family: 'Throwing', relatedSupportedId: 'baseball-pitch', missingCapability: 'an underhand windmill arm path clip' },
   { name: 'Countermovement jump', aliases: ['countermovement jump', 'cmj', 'vertical jump', 'jump', 'box jump'], family: 'Jump/landing', relatedSupportedId: 'front-squat', missingCapability: 'takeoff, flight and landing reference clip' },
   { name: 'Planned lateral cut', aliases: ['lateral cut', 'cut', 'cutting', 'change of direction', 'side step', 'cod'], family: 'Direction change', relatedSupportedId: 'sprint-acceleration', missingCapability: 'direction-change clip with lateral foot contact' },
 ];
 
 /** Phase boundaries can depend on tempo parameters. */
 export function phasesFor(movement: MovementDefinition, params: Record<string, number>): PhaseDefinition[] {
+  if (movement.segments) {
+    const tm = segmentTiming(movement, params);
+    return movement.phases.map((p) => ({ ...p, ...tm.bounds[p.id] }));
+  }
   if (movement.id !== 'front-squat') return movement.phases;
   const t = squatTiming(params);
   const [setup, descent, bottom, ascent] = movement.phases;
@@ -240,8 +245,23 @@ export function squatTiming(params: Record<string, number>) {
   };
 }
 
+/** Segment durations (s) and normalised phase bounds for skill clips. */
+export function segmentTiming(movement: MovementDefinition, params: Record<string, number>) {
+  const segs = movement.segments ?? [];
+  const durs = segs.map((s) => (s.durationParam && params[s.durationParam] !== undefined ? params[s.durationParam] * (s.paramShare ?? 1) : s.duration));
+  const total = durs.reduce((a, b) => a + b, 0);
+  const bounds: Record<string, { start: number; end: number }> = {};
+  let acc = 0;
+  segs.forEach((s, i) => {
+    bounds[s.phaseId] = { start: acc / total, end: (acc + durs[i]) / total };
+    acc += durs[i];
+  });
+  return { total, bounds };
+}
+
 /** Modeled duration of one cycle, seconds. */
 export function cycleDuration(movement: MovementDefinition, params: Record<string, number>): number {
+  if (movement.segments) return segmentTiming(movement, params).total;
   if (movement.id === 'front-squat') return squatTiming(params).total;
   if (movement.id === 'sprint-acceleration') return 2 / (params.stepFrequency ?? 4);
   return movement.baseDuration;
@@ -252,6 +272,6 @@ export function defaultParams(movement: MovementDefinition): Record<string, numb
 }
 
 export function phaseAt(phases: PhaseDefinition[], t: number): PhaseDefinition {
-  const x = ((t % 1) + 1) % 1;
+  const x = t >= 1 ? 1 - 1e-9 : ((t % 1) + 1) % 1;
   return phases.find((p) => x >= p.start && x < p.end) ?? phases[phases.length - 1];
 }
