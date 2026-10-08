@@ -6,6 +6,7 @@ import type { SavedScene, SceneState } from '../domain/types';
 
 export function Saved({ onOpen }: { onOpen: (s: SceneState, saved: { id: string; name: string }) => void }) {
   const [items, setItems] = useState<SavedScene[]>(listSaved());
+  const [confirmWipe, setConfirmWipe] = useState(false);
   const [warning, setWarning] = useState<{ item: SavedScene; summary: string }>();
 
   const open = (item: SavedScene) => {
@@ -54,9 +55,15 @@ export function Saved({ onOpen }: { onOpen: (s: SceneState, saved: { id: string;
           ))}
         </ul>
       )}
-      <button className="btn btn--ghost danger" onClick={() => { if (confirm('Delete all saved scenes, favorites and recents from this browser?')) { deleteAllPersonalData(); setItems([]); } }}>
-        Delete all personal data
-      </button>
+      {confirmWipe ? (
+        <div className="row danger" role="alert">
+          <span>Delete all saved scenes, favorites and recents from this browser?</span>
+          <button className="btn btn--warn" onClick={() => { deleteAllPersonalData(); setItems([]); setConfirmWipe(false); }}>Delete everything</button>
+          <button className="btn btn--ghost" onClick={() => setConfirmWipe(false)}>Cancel</button>
+        </div>
+      ) : (
+        <button className="btn btn--ghost danger" onClick={() => setConfirmWipe(true)}>Delete all personal data</button>
+      )}
     </div>
   );
 }
